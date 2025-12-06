@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 // 📦 API Service
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const apiService = {
   getUsers: async () => {
@@ -59,26 +59,58 @@ const apiService = {
   },
 };
 
-// 🎯 דף הכניסה
+// 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
 const LoginPage = ({ onLogin, loading }) => {
-  const [users, setUsers] = useState([]);
-  const [error, setError] = useState(null);
+  const [schools, setSchools] = useState([]);
+  const [schoolCode, setSchoolCode] = useState("");
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
 
+  // טעינת רשימת בתי ספר
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchSchools = async () => {
       try {
-        const data = await apiService.getUsers();
-        setUsers(data);
+        const res = await fetch(`${API_URL}/api/schools`);
+        const data = await res.json();
+        setSchools(data);
       } catch (err) {
-        setError("שגיאה בטעינת משתמשים");
         console.error(err);
+        setError("שגיאה בטעינת בתי הספר");
       }
     };
-    fetchUsers();
+    fetchSchools();
   }, []);
 
-  const handleLogin = (user) => {
-    onLogin(user);
+  // התחברות
+  const handleLogin = async () => {
+    setError("");
+
+    if (!schoolCode || !username.trim()) {
+      setError("נא למלא את כל השדות");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schoolCode, username })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "שגיאה בהתחברות");
+        return;
+      }
+
+      // שולחים את ה-user שהגיע מהשרת ל-App
+      onLogin(data.user);
+
+    } catch (err) {
+      console.error(err);
+      setError("תקלה בשרת");
+    }
   };
 
   return (
@@ -88,46 +120,58 @@ const LoginPage = ({ onLogin, loading }) => {
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2">
-            🎵 Vibe-Coding
-          </h1>
-          <p className="text-gray-600">אתר אינטראקטיבי ללימוד WEB</p>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2">🎵 Vibe-Coding</h1>
+          <p className="text-gray-600">התחברות למערכת הלמידה</p>
         </div>
 
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">
+          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-center">
             {error}
           </div>
         )}
 
-        {loading ? (
-          <div className="flex justify-center">
-            <Loader className="w-8 h-8 text-purple-600 animate-spin" />
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600 text-center mb-4">
-              בחרי את שמך כדי להתחיל:
-            </p>
-            {users.length === 0 ? (
-              <p className="text-center text-gray-600">לא נמצאו משתמשים</p>
-            ) : (
-              users.map((user) => (
-                <button
-                  key={user.id}
-                  onClick={() => handleLogin(user)}
-                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white py-3 rounded-lg font-semibold transition transform hover:scale-105"
-                >
-                  {user.name}
-                </button>
-              ))
-            )}
-          </div>
-        )}
+        {/* בחירת בית ספר */}
+        <div className="mb-5">
+          <label className="font-semibold">בחרי בית ספר:</label>
+          <select
+            className="w-full mt-2 border p-2 rounded-lg"
+            value={schoolCode}
+            onChange={(e) => setSchoolCode(e.target.value)}
+          >
+            <option value="">-- בחרי --</option>
+            {schools.map((school) => (
+              <option key={school.code} value={school.code}>
+                {school.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* שם משתמש */}
+        <div className="mb-5">
+          <label className="font-semibold">שם המשתמש (שם התלמידה):</label>
+          <input
+            type="text"
+            className="w-full mt-2 border p-2 rounded-lg"
+            placeholder="הקלידי את שמך..."
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </div>
+
+        {/* כפתור התחברות */}
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg font-semibold hover:scale-105 transition"
+        >
+          התחברות
+        </button>
       </div>
     </div>
   );
 };
+
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
