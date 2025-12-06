@@ -119,6 +119,47 @@ app.get('/api/courses', (req, res) => {
   }
 });
 
+
+// 📚 קבלת רשימת סמינרים
+app.get('/api/schools', (req, res) => {
+  try {
+    const schools = require('./data/schools.json'); // נניח שיש לך קובץ schools.json
+    res.json(schools);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch schools' });
+  }
+});
+
+// 📚 קבלת תלמידים לפי סמינר
+app.get('/api/school/:schoolId/students', (req, res) => {
+  const schoolId = req.params.schoolId;
+  console.log("schoolId is: ",schoolId);
+  try {
+    const users = require('./data/users.json'); // נניח שיש לך קובץ students.json
+    const filteredUsers = users.filter(user => user.schoolId === schoolId);
+    res.json(filteredUsers);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users for school' });
+  }
+});
+
+// 🔑 התחברות לפי קוד בית ספר ושם משתמש
+app.post('/api/login', (req, res) => {
+  const { schoolCode, username } = req.body;
+  
+  // לוגיקה לבדוק את הקוד ושם המשתמש 
+  // (במקום זאת, זה דוגמה בלבד, יש להוסיף את הבדיקה לפי המידע שלך)
+    const schools = require('./data/schools.json'); // נניח שיש לך קובץ schools.json
+    const school = schools.find(s=>s.code === schoolCode );
+    const users = require('./data/users.json'); // נניח שיש לך קובץ students.json
+     const user = users.find(u=>u.name == username );
+  if (school && user) {
+    res.json({ success: true, message: 'Login successful', user:user }); 
+  } else {
+    res.status(400).json({ error: 'Invalid school code or username' });
+  }
+});
+
 // 📁 שיתוף קבצי וידאו סטטיים
 app.use('/videos', express.static('public/videos'));
 
