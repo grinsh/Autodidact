@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
+const { error } = require('console');
 require('dotenv').config();
 
 const app = express();
@@ -119,6 +120,59 @@ app.get('/api/courses', (req, res) => {
   }
 });
 
+
+// 📚 קבלת רשימת סמינרים
+app.get('/api/schools', (req, res) => {
+  try {
+    const schools = require('./data/schools.json'); // נניח שיש לך קובץ schools.json
+    res.json(schools);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch schools' });
+  }
+});
+
+// 📚 קבלת תלמידים לפי סמינר
+app.get('/api/school/:schoolId/students', (req, res) => {
+  const schoolId = req.params.schoolId;
+  console.log("schoolId is: ", schoolId);
+  try {
+    const users = require('./data/users.json'); // נניח שיש לך קובץ students.json
+    const filteredUsers = users.filter(user => user.schoolId === schoolId);
+    res.json(filteredUsers);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users for school' });
+  }
+});
+
+// 🔑 התחברות לפי קוד בית ספר ושם משתמש
+app.post('/api/login', (req, res) => {
+  const { schoolCode, username } = req.body;
+  try 
+  {
+    const  schools  = require('./data/schools.json'); 
+    const school = schools.find(s => s.code === schoolCode);
+
+    const { users } = require('./data/users.json');
+    const user = users.find(u =>
+      u.name == username && u.schoolCode === school.code);
+    if (school && user) {
+      res.json({
+        success: true,
+        message: 'Login successful',
+        user
+      })
+    }
+    return res.status(400).json({
+      error: 'Invalid school code or username'
+    })
+  }
+  catch (error) {
+    console.log("Login error: ", error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+}
+);
+
 // 📁 שיתוף קבצי וידאו סטטיים
 app.use('/videos', express.static('public/videos'));
 
@@ -132,5 +186,5 @@ app.get("*", (req, res) => {
 
 
 // const PORT = process.env.PORT || 5000;
-const PORT =  5000;
+const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

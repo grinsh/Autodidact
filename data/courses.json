@@ -10,8 +10,14 @@
           "title": "מבוא ל-HTML",
           "description": "הכירו עם תגיות HTML, מבנה דף ואלמנטים בסיסיים",
           "videos": [
-            { "title": "מה זה HTML?", "url": "https://autodidact.co.il/videos/ch1-intro-html.mp4" },
-            { "title": "תגיות בסיסיות", "url": "https://autodidact.co.il/videos/ch1-basic-tags.mp4" }
+            {
+              "title": "מה זה HTML?",
+              "url": "https://autodidact.co.il/videos/ch1-intro-html.mp4"
+            },
+            {
+              "title": "תגיות בסיסיות",
+              "url": "https://autodidact.co.il/videos/ch1-basic-tags.mp4"
+            }
           ],
           "assignment": {
             "title": "בנו דף HTML ראשון",
@@ -23,8 +29,14 @@
           "title": "CSS - עיצוב דפים",
           "description": "למדו כיצד לעצב דפים עם צבעים, גופנים וופריסות",
           "videos": [
-            { "title": "מבוא ל-CSS", "url": "https://autodidact.co.il/videos/ch2-css-intro.mp4" },
-            { "title": "Flexbox", "url": "https://autodidact.co.il/videos/ch2-flexbox.mp4" }
+            {
+              "title": "מבוא ל-CSS",
+              "url": "https://autodidact.co.il/videos/ch2-css-intro.mp4"
+            },
+            {
+              "title": "Flexbox",
+              "url": "https://autodidact.co.il/videos/ch2-flexbox.mp4"
+            }
           ],
           "assignment": {
             "title": "עיצוב דף HTML",
@@ -36,15 +48,21 @@
     {
       "id": 2,
       "name": "JavaScript - תכנות אינטראקטיבי",
-      "description": "למדו JavaScript ללא דיאגות",
+      "description": "למדו JavaScript ללא דאגות",
       "chapters": [
         {
           "id": 3,
           "title": "משתנים ותפעולים",
           "description": "הכירו עם משתנים, טיפים נתונים וביטויים",
           "videos": [
-            { "title": "משתנים ב-JS", "url": "https://autodidact.co.il/videos/ch3-variables.mp4" },
-            { "title": "פעולות ובקרת זרימה", "url": "https://autodidact.co.il/videos/ch3-operators.mp4" }
+            {
+              "title": "משתנים ב-JS",
+              "url": "https://autodidact.co.il/videos/ch3-variables.mp4"
+            },
+            {
+              "title": "פעולות ובקרת זרימה",
+              "url": "https://autodidact.co.il/videos/ch3-operators.mp4"
+            }
           ],
           "assignment": {
             "title": "מחשבון פשוט",
@@ -56,7 +74,10 @@
           "title": "פונקציות וprocedures",
           "description": "שימוש בפונקציות לארגון קוד",
           "videos": [
-            { "title": "פונקציות בסיסיות", "url": "https://autodidact.co.il/videos/ch4-functions.mp4" }
+            {
+              "title": "פונקציות בסיסיות",
+              "url": "https://autodidact.co.il/videos/ch4-functions.mp4"
+            }
           ],
           "assignment": {
             "title": "ספריית פונקציות",
@@ -75,11 +96,52 @@
           "title": "JSX ו-Components",
           "description": "הכירו עם JSX וניצור של Components",
           "videos": [
-            { "title": "מבוא ל-React", "url": "https://autodidact.co.il/videos/ch5-react-intro.mp4" }
+            {
+              "title": "מבוא ל-React",
+              "url": "https://autodidact.co.il/videos/ch5-react-intro.mp4"
+            }
           ],
           "assignment": {
             "title": "Todo App בסיסי",
             "description": "בנו React App שמאפשר: הוסיפו משימות, בחרו כשלם, מחקו משימות וראו את הרשימה המעודכנת."
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "אלגוריתמיקה ותכנות JAVA",
+      "description": "",
+      "chapters": [
+        {
+          "id": 1,
+          "title": "",
+          "description": "",
+          "videos": [
+            {
+              "title": "התקנת סביבת עבודה",
+              "url": ""
+            },
+            {
+              "title": "יצירת פרויקט חדש",
+              "url": ""
+            },
+            {
+              "title": "הוספת מחלקה, כתיבת קוד והרצה",
+              "url": ""
+            },
+            {
+              "title": "פתיחת פרויקט קיים ושמירת קובץ לאחר שינוי",
+              "url": ""
+            },
+            {
+              "title": "התנהלות בסביבת העבודה",
+              "url": ""
+            }
+          ],
+          "assignment": {
+            "title": "",
+            "description": ""
           }
         }
       ]
