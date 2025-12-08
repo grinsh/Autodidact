@@ -5,7 +5,7 @@
       "id": 1,
       "name": "עינת כהן",
       "email": "einat@email.com",
-      "courses": [1, 2],
+      "courses": [1],
       "schoolCode": "001"
     },
     {
