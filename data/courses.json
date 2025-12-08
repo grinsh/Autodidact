@@ -111,11 +111,11 @@
     {
       "id": 4,
       "name": "אלגוריתמיקה ותכנות JAVA",
-      "description": "",
+      "description": "אלגוריתמיקה ותכנות JAVA",
       "chapters": [
         {
           "id": 1,
-          "title": "",
+          "title": "מבוא",
           "description": "",
           "videos": [
             {
@@ -139,6 +139,67 @@
               "url": ""
             }
           ],
+          "assignment": {
+            "title": "",
+            "description": ""
+          }
+        },
+        {
+          "id": 2,
+          "title": "",
+          "description": "משתנים, קלט פלט",
+          "videos": [
+            {
+              "title": "פלט",
+              "url": "http://localhost:5000/videos/JAVA/chapter2/video1-input.wmv"
+            },
+            {
+              "title": "משתנים",
+              "url": "http://localhost:5000/videos/JAVA/chapter2/video2-variables.wmv"
+            },
+            {
+              "title": "הגדרת משתנים וכללים למתן שמות למשתנים",
+              "url": "http://localhost:5000/videos/JAVA/chapter2/video3-definition-and-variable-naming-rule.wmv"
+            },
+            {
+              "title": "השמה, ערכים אפשריים, ושרשור של מחרוזות",
+              "url": "http://localhost:5000/videos/JAVA/chapter2/video4-assignment-possible-values-and-chaining.wmv"
+            },
+            {
+              "title": "קלט - חלק ראשון",
+              "url": ""
+            },
+            {
+              "title": "קלט - חלק שני",
+              "url": ""
+            },
+            {
+              "title": "סוגים שונים של ערכי קלט",
+              "url": ""
+            },
+            {
+              "title": "חלוקה בשארית ושלמים",
+              "url": ""
+            },
+            {
+              "title": "המרות",
+              "url": ""
+            },
+            {
+              "title": "חלוקה ושארית - דוגמאות מורכבות",
+              "url": ""
+            }
+          ],
+          "assignment": {
+            "title": "",
+            "description": ""
+          }
+        },
+        {
+          "id": 3,
+          "title": "תנאים והאופרטור %",
+          "description": "",
+          "videos": [],
           "assignment": {
             "title": "",
             "description": ""
