@@ -1,0 +1,33 @@
+{
+  
+  "users": [
+    {
+      "id": 1,
+      "name": "עינת כהן",
+      "email": "einat@email.com",
+      "courses": [1, 2, 4],
+      "schoolCode": "001"
+    },
+    {
+      "id": 2,
+      "name": "שירה לביא",
+      "email": "shira@email.com",
+      "courses": [1, 3],
+      "schoolCode": "002"
+    },
+    {
+      "id": 3,
+      "name": "רונית מישל",
+      "email": "ronit@email.com",
+      "courses": [2, 3],
+      "schoolCode": "003"
+    },
+    {
+      "id": 4,
+      "name": "כניסה חופשית",
+      "email": "",
+      "courses": [4],
+      "schoolCode": "004"
+    }
+  ]
+}
