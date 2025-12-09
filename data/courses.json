@@ -119,24 +119,28 @@
           "description": "",
           "videos": [
             {
-              "title": "התקנת סביבת עבודה",
-              "url": ""
+              "title": "מבוא",
+              "url": "http://localhost:5000/videos/java-course/chapter1/video1-intoduction.mp4"
             },
             {
-              "title": "יצירת פרויקט חדש",
-              "url": ""
+              "title": "יצירה והרצה של פרויקט",
+              "url": "http://localhost:5000/videos/java-course/chapter1/video2-creating-and-running-project.mp4"
             },
             {
-              "title": "הוספת מחלקה, כתיבת קוד והרצה",
-              "url": ""
+              "title": "הגדרת סביבת העבודה",
+              "url": "http://localhost:5000/videos/java-course/chapter1/video3-Setting-up-the-Workspace.mp4"
             },
             {
-              "title": "פתיחת פרויקט קיים ושמירת קובץ לאחר שינוי",
-              "url": ""
+              "title": "הוספת מחלקה, כתיבת קוד ועוד",
+              "url": "http://localhost:5000/videos/java-course/chapter1/video5-Adding-a-Class-Writing-Code-and-Running.mp4"
+            },
+            {
+              "title": "פתיחת פרויקט קיים ועבודה איתו",
+              "url": "http://localhost:5000/videos/java-course/chapter1/video6-Opening-an-Existing-Project-and-Saving-a-File-After-Changes.mp4"
             },
             {
               "title": "התנהלות בסביבת העבודה",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter1/video7-Working-in-the-Workspace.mp4"
             }
           ],
           "assignment": {
@@ -151,55 +155,100 @@
           "videos": [
             {
               "title": "פלט",
-              "url": "../public/videos/JAVA/chapter2/video1-output.wmv"
+              "url": "http://localhost:5000/videos/java-course/chapter2/video1-input.mp4"
             },
             {
               "title": "משתנים",
-              "url": "http://localhost:5000/videos/JAVA/chapter2/video2-variables.wmv"
+              "url": "http://localhost:5000/videos/java-course/chapter2/video2-variables.mp4"
             },
             {
               "title": "הגדרת משתנים וכללים למתן שמות למשתנים",
-              "url": "http://localhost:5000/videos/JAVA/chapter2/video3-definition-and-variable-naming-rule.wmv"
+              "url": "http://localhost:5000/videos/java-course/chapter2/video3-definition-and-variable-naming-rule.mp4"
             },
             {
               "title": "השמה, ערכים אפשריים, ושרשור של מחרוזות",
-              "url": "http://localhost:5000/videos/JAVA/chapter2/video4-assignment-possible-values-and-chaining.wmv"
+              "url": "http://localhost:5000/videos/java-course/chapter2/video4-assignment-possible-values-and-chaining.mp4"
             },
             {
               "title": "קלט - חלק ראשון",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter2/video5-input-1.mp4"
             },
             {
               "title": "קלט - חלק שני",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter2/video6-input-2.mp4"
             },
             {
               "title": "סוגים שונים של ערכי קלט",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter2/video7-types-of-input-values.mp4"
             },
             {
               "title": "חלוקה בשארית ושלמים",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter2/"
             },
             {
               "title": "המרות",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter2/video9-casting.mp4"
             },
             {
               "title": "חלוקה ושארית - דוגמאות מורכבות",
-              "url": ""
+              "url": "http://localhost:5000/videos/java-course/chapter2/video10.mp4"
+            },
+            {
+              "title": "אופרטורים",
+              "url": "http://localhost:5000/videos/java-course/chapter2/video11-operators.mp4"
             }
           ],
           "assignment": {
             "title": "",
-            "description": ""
+            "description": " "
           }
         },
         {
           "id": 3,
           "title": "תנאים והאופרטור %",
           "description": "",
-          "videos": [],
+          "videos": [
+            {
+              "title": "מה נלמד היום",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video1-what-will-we-learn-today.mp4"
+            },
+            {
+              "title": "משמעות האופרטורים חלוקה ושארית דוגמאות מספריות",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video2-The-meaning-of-the-operators-Division-and-remainder-Numerical-examples.mp4"
+            },
+            {
+              "title": "מודולו",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video3-Modulo-example.mp4"
+            },
+            {
+              "title": "מודולו פירוק מספר ספרותיו מומלץ בחום לצפות",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video4-Modulo-factoring-a-number-of-its-digits-It-is-highly-recommended-to-watch.mp4"
+            },
+            {
+              "title": "תנאי פשוט הסבר ודוגמה",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video5-Simple-condition-Explanation-and-example.mp4"
+            },
+            {
+              "title": "תנאי פשוט ואופרטורי היחס",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video6-Simple-conditions-or-ratio-operators.mp4"
+            },
+            {
+              "title": "הגשה משימה שבע",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video7-Submitting-task-seven.mp4"
+            },
+            {
+              "title": "תרגול תרגיל מספר 1 עמודים 1 עד 16",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video8-Practice-exercise-number-1-pages-1-to-16.mp4"
+            },
+            {
+              "title": "תרגול תרגילים שתיים ושמונה עמוד 1 עד 16",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video9-Practice-exercises-two-and-eight-pages-1-to-16.mp4"
+            },
+            {
+              "title": "הגשה תרגילים 1248 עמודים 1 עד 16",
+              "url": "http://localhost:5000/videos/java-course/chapter3/video10-Submitting-exercises-1,2,4,8-pages-1-to-16.mp4"
+            }
+          ],
           "assignment": {
             "title": "",
             "description": ""

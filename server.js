@@ -9,6 +9,10 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
+app.use((req,res,next)=>{
+  res.header("Cross-Origin-Resource-Policy","cross-origin");
+  next();
+})
 app.use(express.json());
 
 const openai = new OpenAI({
@@ -156,7 +160,7 @@ app.post('/api/login', (req, res) => {
     const user = users.find(u =>
       u.name == username && u.schoolCode === school.code);
     if (school && user) {
-      res.json({
+      return res.json({
         success: true,
         message: 'Login successful',
         user
