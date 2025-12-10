@@ -1,4 +1,4 @@
-// server.js
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -9,6 +9,10 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
+app.use((req,res,next)=>{
+  res.header("Cross-Origin-Resource-Policy","cross-origin");
+  next();
+})
 app.use(express.json());
 
 const openai = new OpenAI({
@@ -68,7 +72,7 @@ app.post('/api/submit-assignment', async (req, res) => {
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: process.env.EMAIL_USER,
+    to: studentEmail,
     subject: `✅ המטלה שלך נבדקה - ${courseName}`,
     html: `
       <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
@@ -156,7 +160,7 @@ app.post('/api/login', (req, res) => {
     const user = users.find(u =>
       u.name == username && u.schoolCode === school.code);
     if (school && user) {
-      res.json({
+      return res.json({
         success: true,
         message: 'Login successful',
         user
