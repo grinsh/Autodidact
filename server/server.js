@@ -9,12 +9,11 @@ require("dotenv").config();
 const app = express(process.env.OPENAI_API_KEY);
 
 app.use(cors());
-console.log();
-
-app.use((req, res, next) => {
-  res.header("Cross-Origin-Resource-Policy", "cross-origin");
+app.use((req,res,next)=>{
+  res.header("Cross-Origin-Resource-Policy","cross-origin");
   next();
-});
+})
+
 
 app.use(express.json());
 
