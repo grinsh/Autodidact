@@ -6,7 +6,6 @@ const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
 const { error } = require('console');
 const fs = require('fs').promises;
-const path = require('path')
 require('dotenv').config();
 
 const app = express();
