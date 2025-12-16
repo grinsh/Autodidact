@@ -505,7 +505,7 @@ const VideoPlayer = ({ filename }) => {
       <h2>Video Player</h2>
       <video ref={videoRef} controls width="640" height="360">
         <source
-          src={`http://localhost:3001/api/videos/${filename}`}
+          src={`http://localhost:5000/api/videos/${filename}`}
           type="video/mp4"
         />
         Your browser does not support the video tag.
@@ -560,7 +560,7 @@ export default function App() {
 
   return (
     <div>
-      <VideoPlayer filename=""/>
+      <VideoPlayer filename="decision tree - regression.mp4"/>
       {currentPage === "login" && (
         <LoginPage onLogin={handleLogin} loading={loading} />
       )}

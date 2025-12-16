@@ -231,7 +231,9 @@ app.post("/api/login", (req, res) => {
 
 app.get("/api/videos/:filename", async (req, res) => {
   const { filename } = req.params;
+
   const range = req.headers.range;
+  console.log("arrived to videos endpoint, range:", range);
 
   if (!range) return res.status(400).send("Requires Range header");
 
@@ -244,6 +246,10 @@ app.get("/api/videos/:filename", async (req, res) => {
         Range: "bytes=0-0", // רק כדי לקבל את Content-Range
       })
     );
+
+    if (!head.ContentRange) {
+      return res.status(404).send("File not found in S3");
+    }
     const fileSize = Number(head.ContentRange.split("/")[1]);
 
     // חישוב טווח מתוך ה-Range header
@@ -273,12 +279,11 @@ app.get("/api/videos/:filename", async (req, res) => {
     s3Stream.Body.pipe(res); // Stream ישירות מה-S3 ללקוח
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error streaming video");
+    res.status(500).send(err.body);
   }
 });
 
-// 📁 שיתוף קבצי וידאו סטטיים
-// app.use('/videos', express.static('public/videos'));
+
 
 //שירות ריאקט סטטי
 app.use(express.static(path.join(__dirname, "build")));
