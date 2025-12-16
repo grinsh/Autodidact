@@ -1,5 +1,10 @@
-
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useRef,
+} from "react";
 import {
   ChevronRight,
   Play,
@@ -11,7 +16,7 @@ import {
 } from "lucide-react";
 
 // 📦 API Service
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 //const API_URL = 'https://autodidact.co.il';
 
 const apiService = {
@@ -26,19 +31,19 @@ const apiService = {
   },
 
   getSchools: async () => {
-      const res = await fetch(`${API_URL}/api/schools`);
-      const data = await res.json();
-      return data;
+    const res = await fetch(`${API_URL}/api/schools`);
+    const data = await res.json();
+    return data;
   },
-  login: async(schoolCode, username) => {
+  login: async (schoolCode, username) => {
     const res = await fetch(`${API_URL}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schoolCode, username })
-      });
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ schoolCode, username }),
+    });
 
     const data = await res.json();
-    return { ok: res.ok, data};
+    return { ok: res.ok, data };
   },
 
   checkAssignment: async (code, assignment, studentName, studentEmail) => {
@@ -77,7 +82,7 @@ const apiService = {
 };
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
-const  LoginPage = ({ onLogin, loading }) => {
+const LoginPage = ({ onLogin, loading }) => {
   const [schools, setSchools] = useState([]);
   const [schoolCode, setSchoolCode] = useState("");
   const [username, setUsername] = useState("");
@@ -85,18 +90,18 @@ const  LoginPage = ({ onLogin, loading }) => {
 
   // טעינת רשימת בתי ספר
   useEffect(() => {
-  const fetchSchools = async () => {
-    try {
-      const data = await apiService.getSchools();
-      setSchools(data);
-    } catch (err) {
-      console.error(err);
-      setError("שגיאה בטעינת בתי הספר");
-    }
-  };
+    const fetchSchools = async () => {
+      try {
+        const data = await apiService.getSchools();
+        setSchools(data);
+      } catch (err) {
+        console.error(err);
+        setError("שגיאה בטעינת בתי הספר");
+      }
+    };
 
-  fetchSchools();
-}, []);
+    fetchSchools();
+  }, []);
 
   // התחברות
   const handleLogin = async () => {
@@ -116,7 +121,6 @@ const  LoginPage = ({ onLogin, loading }) => {
       }
       // שולחים את ה-user שהגיע מהשרת ל-App
       onLogin(data.user);
-
     } catch (err) {
       console.error(err);
       setError("תקלה בשרת");
@@ -130,7 +134,9 @@ const  LoginPage = ({ onLogin, loading }) => {
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2">🎵 Vibe-Coding</h1>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2">
+            🎵 Vibe-Coding
+          </h1>
           <p className="text-gray-600">התחברות למערכת הלמידה</p>
         </div>
 
@@ -181,7 +187,6 @@ const  LoginPage = ({ onLogin, loading }) => {
     </div>
   );
 };
-
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
@@ -492,6 +497,23 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
+const VideoPlayer = ({ filename }) => {
+  const videoRef = useRef(null);
+
+  return (
+    <div>
+      <h2>Video Player</h2>
+      <video ref={videoRef} controls width="640" height="360">
+        <source
+          src={`http://localhost:3001/api/videos/${filename}`}
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  );
+};
+
 // 🎯 App הראשי
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -538,6 +560,7 @@ export default function App() {
 
   return (
     <div>
+      <VideoPlayer filename=""/>
       {currentPage === "login" && (
         <LoginPage onLogin={handleLogin} loading={loading} />
       )}
