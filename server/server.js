@@ -232,58 +232,27 @@ app.post("/api/login", (req, res) => {
 app.get("/api/videos/:filename", async (req, res) => {
   const { filename } = req.params;
 
-  const range = req.headers.range;
-  console.log("arrived to videos endpoint, range:", range);
-
-  if (!range) return res.status(400).send("Requires Range header");
+  console.log("proxy video request:", filename);
 
   try {
-    // קבלת מידע על הקובץ כדי לדעת את הגודל
-    const head = await s3.send(
+    const s3Object = await s3.send(
       new GetObjectCommand({
         Bucket: BUCKET_NAME,
         Key: filename,
-        Range: "bytes=0-0", // רק כדי לקבל את Content-Range
       })
     );
 
-    if (!head.ContentRange) {
-      return res.status(404).send("File not found in S3");
-    }
-    const fileSize = Number(head.ContentRange.split("/")[1]);
+    // כותרות פשוטות – בלי Range
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Accept-Ranges", "none");
 
-    // חישוב טווח מתוך ה-Range header
-    const parts = range.replace(/bytes=/, "").split("-");
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-    const chunkSize = end - start + 1;
-
-    // בקשה ל-S3 עם טווח
-    const s3Stream = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: filename,
-        Range: `bytes=${start}-${end}`,
-      })
-    );
-
-    // כותרות HTTP
-    const headers = {
-      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-      "Accept-Ranges": "bytes",
-      "Content-Length": chunkSize,
-      "Content-Type": "video/mp4",
-    };
-
-    res.writeHead(206, headers);
-    s3Stream.Body.pipe(res); // Stream ישירות מה-S3 ללקוח
+    // סטרימינג מהשרת ללקוח
+    s3Object.Body.pipe(res);
   } catch (err) {
-    console.error(err);
-    res.status(500).send(err.body);
+    console.error("video proxy error:", err);
+    res.status(500).send("Failed to load video");
   }
 });
-
-
 
 //שירות ריאקט סטטי
 app.use(express.static(path.join(__dirname, "build")));
