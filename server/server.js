@@ -245,11 +245,14 @@ app.post("/api/login", (req, res) => {
 // 📁 שיתוף קבצי וידאו סטטיים
 app.use("/videos", express.static("public/videos"));
 
-//שירות ריאקט סטטי
-app.use(express.static(path.join(__dirname, "build")));
+const buildPath = path.join(__dirname, "..", "client", "build");
 
+// שירות קבצים סטטיים
+app.use(express.static(buildPath));
+
+// SPA fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  res.sendFile(path.join(buildPath, "index.html"));
 });
 
 // const PORT = process.env.PORT || 5000;
