@@ -1,4 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   ChevronRight,
   Play,
@@ -49,7 +50,10 @@ const apiService = {
     if (!res.ok) throw new Error("Failed to check assignment");
     return res.json();
   },
-
+  getStatistic: async (userId, courseId) => {
+    const res = await fetch(`${API_URL}/api/users/${userId}/courses/${courseId}`);
+    return res.json();
+  },
   // call to the function in the server that send email with the final mark
   submitAssignment: async (
     studentName,
@@ -210,6 +214,8 @@ const LoginPage = ({ onLogin, loading }) => {
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
+  console.log("user:", user);
+  console.log("courses:", courses);
   const userCourses = courses.filter((c) => user.courses.includes(c.id));
 
   return (
@@ -217,7 +223,7 @@ const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            ברוכה בחזרה, {user.name}! 👋
+            ברוכה הבאה, {user.name}! 👋
           </h1>
           <p className="text-gray-600">בחרי קורס כדי להמשיך</p>
         </div>
@@ -229,20 +235,12 @@ const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {userCourses.map((course) => (
-              <div
+              <CourseCard
                 key={course.id}
-                onClick={() => onSelectCourse(course)}
-                className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition transform hover:scale-105"
-              >
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  {course.name}
-                </h2>
-                <p className="text-gray-600 mb-4">{course.description}</p>
-                <div className="flex items-center text-purple-600 font-semibold">
-                  <span>{course.chapters.length} פרקים</span>
-                  <ChevronRight className="w-5 h-5 mr-2" />
-                </div>
-              </div>
+                userId={user.id}
+                course={course}
+                onSelectCourse={onSelectCourse}
+              />
             ))}
           </div>
         )}
@@ -251,7 +249,127 @@ const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
   );
 };
 
-// 📖 דף הקורס
+// רכיב תצוגה שמראה את הסטטיסטיקה של קורס 
+// 🎨 רכיב תצוגה שמראה את הסטטיסטיקה של קורס
+
+const CourseCard = ({ userId, course, onSelectCourse }) => {
+  const [stat, setStat] = useState(null);
+  const [loading, setLoading] = useState(true);
+  console.log("course:", course);
+  console.log("stat:", stat);
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await apiService.getStatistic(userId, course.id);
+        setStat(data);
+      } catch (error) {
+        console.error("שגיאה בטעינת סטטיסטיקה:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (course?.id && userId) {
+      fetchStats();
+    }
+  }, [userId, course?.id]);
+
+  if (!course) return null;
+
+  // 🔒 המרות בטוחות
+  const percentDone = Number(stat?.percentDone) || 0;
+  const percentToDo = Number(stat?.percentToDo) || 0;
+  const subCount = Number(stat?.numberOfSubbmitions) || 0;
+
+  const chaptersCount = Array.isArray(course.chapters)
+    ? course.chapters.length
+    : 0;
+
+  const courseName =
+    typeof course.name === "string"
+      ? course.name
+      : JSON.stringify(course.name ?? "");
+
+  const courseDescription =
+    typeof course.description === "string"
+      ? course.description
+      : JSON.stringify(course.description ?? "");
+
+  const pieData = [
+    { name: "בוצע", value: Number(stat?.percentDone) || 0 },
+    { name: "נותר", value: Number(stat?.percentToDo) || 0 },
+  ];
+
+
+
+  console.log("🧩 pieData:", pieData);
+
+  return (
+    <div
+      onClick={() => onSelectCourse(course)}
+      className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-100"
+    >
+      {/* 🏷 שם הקורס */}
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        {courseName}
+      </h2>
+
+      {/* 🧾 תיאור הקורס */}
+      <p className="text-gray-600 mb-4">{courseDescription}</p>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <Loader className="w-6 h-6 text-purple-600 animate-spin" />
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-gray-700 mb-3 text-center">
+            פרקים שבוצעו:{" "}
+            <span className="font-semibold text-purple-700">
+              {subCount}
+            </span>{" "}
+            מתוך {chaptersCount}
+          </p>
+
+          {/* עוגת סטטיסטיקה
+          <div className="flex justify-center">
+            {Array.isArray(pieData) && pieData.length > 0 ? (
+              <PieChart width={180} height={180}>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={50}
+                  outerRadius={70}
+                  paddingAngle={3}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={index === 0 ? "#7C3AED" : "#E5E7EB"}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            ) : (
+              <p>אין נתונים להצגה</p>
+            )}
+          </div> */}
+
+          <p className="text-center text-lg font-bold text-purple-700 mt-4">
+            {percentDone}% הושלם
+          </p>
+        </>
+      )}
+    </div>
+  );
+};
+
+
+
+
+// 📖 דף הקורס - מראה את הפרקים שך הקורס המסוים 
 const CoursePage = ({ user, course, onSelectChapter, onBack, courses, onShowMarks }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
@@ -301,7 +419,7 @@ const CoursePage = ({ user, course, onSelectChapter, onBack, courses, onShowMark
   );
 };
 
-// 📝 דף הפרק
+// 📝 דף הפרק - מראה את ההסרטות והמטלה של הפרק
 const ChapterPage = ({ user, chapter, course, onBack }) => {
   const [code, setCode] = useState("");
   const [feedback, setFeedback] = useState(null);
@@ -652,11 +770,9 @@ export default function App() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [courses, setCourses] = useState([]);
-  // const [isLogin, setIsLogin] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const checkLogin = currentPage !== "login";
- 
+
   // redirect to the login page
   const handleLogOut = () => {
     setCurrentPage("login")
@@ -733,20 +849,18 @@ export default function App() {
 
         />
       )}
-      {
-        currentPage === "marks" && (
-          <MarksPage
-            user={currentUser}
-            course={selectedCourse}
-            onBack={() => setCurrentPage("course")}
-          />
-        )}
-      {
-        currentPage !== "login" && (
+      {currentPage === "marks" && (
+        <MarksPage
+          user={currentUser}
+          course={selectedCourse}
+          onBack={() => setCurrentPage("course")}
+        />
+      )}
+      {currentPage !== "login" && (
         <LogOutButton
-         onLogOut={handleLogOut} 
-         />
-        )}
+          onLogOut={handleLogOut}
+        />
+      )}
     </div>
   );
 }
