@@ -14,6 +14,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import './App.css';
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
@@ -372,8 +373,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
                 <p className="text-sm text-gray-600 mb-2 font-semibold">
                   {video.title}
                 </p>
-                  <VideoPlayer filename={video.url} />
-
+                <VideoPlayer filename={video.url} />
               </div>
             ))}
           </div>
@@ -491,21 +491,23 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
-const VideoPlayer = ({ filename }) => {
+const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
   const videoRef = useRef(null);
   const [blockedHtml, setBlockedHtml] = useState(null);
+  const [fade, setFade] = useState(false);
 
   useEffect(() => {
     const checkVideo = async () => {
       try {
         const response = await fetch(
-          `${REACT_APP_VIDEOS_URL}/${filename}`
+          `http://localhost:5000/api/videos/${filename}`
         );
-
         if (response.status === 418) {
-          // וידאו חסום – קבלת HTML של iframe
-          const html = await response.text();
-          setBlockedHtml(html);
+          const htmlRaw = await response.text();
+          const htmlClean = htmlRaw.replace(/<style[\s\S]*?<\/style>/gi, "");
+
+          setFade(true); 
+          setTimeout(() => setBlockedHtml(htmlClean), 300);
         }
       } catch (err) {
         console.error("Error fetching video:", err);
@@ -515,22 +517,44 @@ const VideoPlayer = ({ filename }) => {
     checkVideo();
   }, [filename]);
 
-  if (blockedHtml) {
-    // מציג iframe במקום הוידאו
-    return <div dangerouslySetInnerHTML={{ __html: blockedHtml }} />;
-  }
-
-  // מציג וידאו רגיל
   return (
-    <div>
-      {/* <h2>Video Player</h2> */}
-      <video ref={videoRef} controls width="640" height="360">
-        <source
-          src={`${REACT_APP_VIDEOS_URL}/${filename}`}
-          type="video/mp4"
+    <div
+      style={{
+        width,
+        height,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {blockedHtml ? (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            opacity: fade ? 1 : 0,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+          dangerouslySetInnerHTML={{ __html: blockedHtml }}
         />
-        Your browser does not support the video tag.
-      </video>
+      ) : (
+        <video
+          ref={videoRef}
+          controls
+          width="100%"
+          height="100%"
+          style={{
+            display: "block",
+            opacity: fade ? 0 : 1,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+        >
+          <source
+            src={`http://localhost:5000/api/videos/${filename}`}
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+      )}
     </div>
   );
 };
