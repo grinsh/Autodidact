@@ -155,7 +155,7 @@ const LoginPage = ({ onLogin, loading }) => {
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2">🎵 Vibe-Coding</h1>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2"> ברוכה הבאה ! </h1>
           <p className="text-gray-600">התחברות למערכת הלמידה</p>
         </div>
 
@@ -619,7 +619,30 @@ const MarksPage = ({ user, course, onBack }) => {
 };
 
 
-
+const LogOutButton = ({ onLogOut }) => {
+  return (
+    <div className="fixed top-4 left-4 z-50">
+      <button
+        onClick={onLogOut}
+        className="
+          flex items-center gap-2
+          bg-gradient-to-r from-red-500 to-pink-500
+          text-white
+          px-4 py-2
+          rounded-full
+          font-semibold
+          shadow-lg
+          hover:from-red-600 hover:to-pink-600
+          hover:scale-105
+          transition
+        "
+      >
+        התנתקות
+        <span className="text-lg">🚪</span>
+      </button>
+    </div>
+  );
+};
 
 
 // 🎯 App הראשי
@@ -629,9 +652,18 @@ export default function App() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [courses, setCourses] = useState([]);
+  // const [isLogin, setIsLogin] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const checkLogin = currentPage !== "login";
+ 
+  // redirect to the login page
+  const handleLogOut = () => {
+    setCurrentPage("login")
+  }
+
   useEffect(() => {
+
     const fetchCourses = async () => {
       try {
         const data = await apiService.getCourses();
@@ -665,6 +697,7 @@ export default function App() {
       setCurrentPage("dashboard");
     }
   };
+
   const handleSeeMarks = () => {
     setCurrentPage("marks")
   }
@@ -708,7 +741,12 @@ export default function App() {
             onBack={() => setCurrentPage("course")}
           />
         )}
-
+      {
+        currentPage !== "login" && (
+        <LogOutButton
+         onLogOut={handleLogOut} 
+         />
+        )}
     </div>
   );
 }
