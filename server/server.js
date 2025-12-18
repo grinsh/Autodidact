@@ -20,6 +20,52 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// הפונקציה מחזירה אובייקט שמכיל 3 שדות:
+// 1 - כמה פרקים הושלמו
+// 2 - כמה אחוז מהקורס הושלם
+// 3 - כמה אחוז לא הושלם 
+app.get('/api/users/:userId/courses/:courseId', async (req, res) => {
+  const userId = req.params.userId;
+  const courseId = req.params.courseId;
+  try {
+    const data = require('./data/users.json');
+    const users = data.users;
+    const user = users.find(u => u.id === Number(userId));
+    if (!user)
+      return res.status(404).json({
+        error: " user not found"
+      })
+    const dataCourses = require('./data/courses.json').courses;
+    const course = dataCourses.find(c => c.id === Number(courseId))
+    if (!course)
+      return res.status(404).json({
+        error: " course not found"
+      })
+    const submissionsForCourse = user.marks.filter(
+      mark => mark.courseId === Number(courseId)
+    );
+
+    const numberOfSubbmitions = (submissionsForCourse.length===0) ? 0 : submissionsForCourse.length;
+    const numberOfChapters = course.chapters.length;
+    const percentDone = (numberOfSubbmitions * 100) / numberOfChapters;
+    const percentToDo = 100 - percentDone;
+    res.json(
+      {
+        "numberOfSubbmitions": numberOfSubbmitions,
+        "percentDone": percentDone,
+        "percentToDo": percentToDo
+      }
+    );
+  }
+  catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      error: "failed to fetch the number of subbmitions"
+    })
+  }
+})
+
+
 // ✉️ הגדרת nodemailer
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -47,7 +93,6 @@ app.post("/api/save-mark", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    console.log('user', user);
     const newMark = {
       courseId,
       chapterId,
