@@ -1,5 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect, createContext, useContext, useMemo } from "react";
 import {
   ChevronRight,
   Play,
@@ -11,8 +10,11 @@ import {
 } from "lucide-react";
 
 // 📦 API Service
-// const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const API_URL = 'https://autodidact.co.il';
+const API_URL = process.env.REACT_APP_API_URL ;
+
+if(API_URL!="http://localhost:5000")
+  throw new Error("No env file or variables~~~~~~~!!!!")
+// const API_URL = "https://autodidact.co.il";
 
 const apiService = {
   getUsers: async () => {
@@ -34,7 +36,7 @@ const apiService = {
     const res = await fetch(`${API_URL}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ schoolCode, username })
+      body: JSON.stringify({ schoolCode, username }),
     });
 
     const data = await res.json();
@@ -51,7 +53,9 @@ const apiService = {
     return res.json();
   },
   getStatistic: async (userId, courseId) => {
-    const res = await fetch(`${API_URL}/api/users/${userId}/courses/${courseId}`);
+    const res = await fetch(
+      `${API_URL}/api/users/${userId}/courses/${courseId}`
+    );
     return res.json();
   },
   // call to the function in the server that send email with the final mark
@@ -80,27 +84,19 @@ const apiService = {
   },
 
   // call the function in server that write the mark in the file .
-  saveMark: async (
-
-    studentId,
-    courseId,
-    chapterId,
-    grade,
-    feedback
-  ) => {
+  saveMark: async (studentId, courseId, chapterId, grade, feedback) => {
     const res = await fetch(`${API_URL}/api/save-mark`, {
-      method: 'POST',
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         studentId,
         courseId,
         chapterId,
         grade,
-        feedback
-      })
-    })
-    if (!res.ok)
-      throw new Error('failed to save mark');
+        feedback,
+      }),
+    });
+    if (!res.ok) throw new Error("failed to save mark");
     return res.json();
   },
 };
@@ -145,7 +141,6 @@ const LoginPage = ({ onLogin, loading }) => {
       }
       // שולחים את ה-user שהגיע מהשרת ל-App
       onLogin(data.user);
-
     } catch (err) {
       console.error(err);
       setError("תקלה בשרת");
@@ -159,7 +154,10 @@ const LoginPage = ({ onLogin, loading }) => {
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2"> ברוכה הבאה ! </h1>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2">
+            {" "}
+            ברוכה הבאה !{" "}
+          </h1>
           <p className="text-gray-600">התחברות למערכת הלמידה</p>
         </div>
 
@@ -211,7 +209,6 @@ const LoginPage = ({ onLogin, loading }) => {
   );
 };
 
-
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
   console.log("user:", user);
@@ -249,7 +246,7 @@ const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
   );
 };
 
-// רכיב תצוגה שמראה את הסטטיסטיקה של קורס 
+// רכיב תצוגה שמראה את הסטטיסטיקה של קורס
 // 🎨 רכיב תצוגה שמראה את הסטטיסטיקה של קורס
 
 const CourseCard = ({ userId, course, onSelectCourse }) => {
@@ -277,9 +274,13 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
   if (!course) return null;
 
   // 🔒 המרות בטוחות
-  const percentDone = Number(stat?.percentDone) || 0;
-  const percentToDo = Number(stat?.percentToDo) || 0;
-  const subCount = Number(stat?.numberOfSubbmitions) || 0;
+  const { percentDone, percentToDo, subCount } = useMemo(() => {
+    return {
+      percentDone: Number(stat?.percentDone) || 0,
+      percentToDo: Number(stat?.percentToDo) || 0,
+      subCount: Number(stat?.numberOfSubbmitions) || 0,
+    };
+  }, [stat]);
 
   const chaptersCount = Array.isArray(course.chapters)
     ? course.chapters.length
@@ -300,8 +301,6 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
     { name: "נותר", value: Number(stat?.percentToDo) || 0 },
   ];
 
-
-
   console.log("🧩 pieData:", pieData);
 
   return (
@@ -310,9 +309,7 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
       className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-100"
     >
       {/* 🏷 שם הקורס */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        {courseName}
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">{courseName}</h2>
 
       {/* 🧾 תיאור הקורס */}
       <p className="text-gray-600 mb-4">{courseDescription}</p>
@@ -325,9 +322,7 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
         <>
           <p className="text-sm text-gray-700 mb-3 text-center">
             פרקים שבוצעו:{" "}
-            <span className="font-semibold text-purple-700">
-              {subCount}
-            </span>{" "}
+            <span className="font-semibold text-purple-700">{subCount}</span>{" "}
             מתוך {chaptersCount}
           </p>
 
@@ -366,15 +361,18 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
   );
 };
 
-
-
-
-// 📖 דף הקורס - מראה את הפרקים שך הקורס המסוים 
-const CoursePage = ({ user, course, onSelectChapter, onBack, courses, onShowMarks }) => {
+// 📖 דף הקורס - מראה את הפרקים שך הקורס המסוים
+const CoursePage = ({
+  user,
+  course,
+  onSelectChapter,
+  onBack,
+  courses,
+  onShowMarks,
+}) => {
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
       <div className="max-w-6xl mx-auto">
-
         <button
           onClick={onBack}
           className="mb-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition"
@@ -469,9 +467,9 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
         chapter.id,
         feedback.grade,
         feedback.feedback
-      )
+      );
       console.log(saveMarkResponse);
-      // call to the function in apiService in order to send email to the student 
+      // call to the function in apiService in order to send email to the student
       await apiService.submitAssignment(
         user.name,
         user.email,
@@ -653,7 +651,6 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
-
 const MarksPage = ({ user, course, onBack }) => {
   const courseMarks = user.marks.filter((m) => m.courseId === course.id);
 
@@ -684,8 +681,8 @@ const MarksPage = ({ user, course, onBack }) => {
             mark?.grade >= 85
               ? "text-green-600"
               : mark?.grade >= 60
-                ? "text-yellow-600"
-                : "text-red-600";
+              ? "text-yellow-600"
+              : "text-red-600";
 
           return (
             <div
@@ -736,7 +733,6 @@ const MarksPage = ({ user, course, onBack }) => {
   // );
 };
 
-
 const LogOutButton = ({ onLogOut }) => {
   return (
     <div className="fixed top-4 left-4 z-50">
@@ -762,7 +758,6 @@ const LogOutButton = ({ onLogOut }) => {
   );
 };
 
-
 // 🎯 App הראשי
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -772,14 +767,12 @@ export default function App() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
-
   // redirect to the login page
   const handleLogOut = () => {
-    setCurrentPage("login")
-  }
+    setCurrentPage("login");
+  };
 
   useEffect(() => {
-
     const fetchCourses = async () => {
       try {
         const data = await apiService.getCourses();
@@ -815,8 +808,8 @@ export default function App() {
   };
 
   const handleSeeMarks = () => {
-    setCurrentPage("marks")
-  }
+    setCurrentPage("marks");
+  };
   return (
     <div>
       {currentPage === "login" && (
@@ -846,7 +839,6 @@ export default function App() {
           chapter={selectedChapter}
           course={selectedCourse}
           onBack={handleBack}
-
         />
       )}
       {currentPage === "marks" && (
@@ -856,11 +848,7 @@ export default function App() {
           onBack={() => setCurrentPage("course")}
         />
       )}
-      {currentPage !== "login" && (
-        <LogOutButton
-          onLogOut={handleLogOut}
-        />
-      )}
+      {currentPage !== "login" && <LogOutButton onLogOut={handleLogOut} />}
     </div>
   );
 }
