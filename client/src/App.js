@@ -662,7 +662,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
     const checkVideo = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/videos/${filename}`
+          `${REACT_APP_VIDEOS_URL}/${filename}`
         );
         if (response.status === 418) {
           const htmlRaw = await response.text();
@@ -711,7 +711,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
           }}
         >
           <source
-            src={`http://localhost:5000/api/videos/${filename}`}
+            src={`${REACT_APP_VIDEOS_URL}/${filename}`}
             type="video/mp4"
           />
           Your browser does not support the video tag.
