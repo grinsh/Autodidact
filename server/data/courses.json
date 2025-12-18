@@ -12,11 +12,11 @@
           "videos": [
             {
               "title": "מה זה HTML?",
-              "url": "https://autodidact.co.il/videos/ch1-intro-html.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             },
             {
               "title": "תגיות בסיסיות",
-              "url": "https://autodidact.co.il/videos/ch1-basic-tags.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             }
           ],
           "assignment": {
@@ -31,11 +31,11 @@
           "videos": [
             {
               "title": "מבוא ל-CSS",
-              "url": "https://autodidact.co.il/videos/ch2-css-intro.mp4"
+               "url": "placeholder_autodidact_rtl_full.mp4"
             },
             {
               "title": "Flexbox",
-              "url": "https://autodidact.co.il/videos/ch2-flexbox.mp4"
+               "url": "placeholder_autodidact_rtl_full.mp4"
             }
           ],
           "assignment": {
@@ -57,11 +57,11 @@
           "videos": [
             {
               "title": "משתנים ב-JS",
-              "url": "https://autodidact.co.il/videos/ch3-variables.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             },
             {
               "title": "פעולות ובקרת זרימה",
-              "url": "https://autodidact.co.il/videos/ch3-operators.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             }
           ],
           "assignment": {
@@ -76,7 +76,7 @@
           "videos": [
             {
               "title": "פונקציות בסיסיות",
-              "url": "https://autodidact.co.il/videos/ch4-functions.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             }
           ],
           "assignment": {
@@ -98,7 +98,7 @@
           "videos": [
             {
               "title": "מבוא ל-React",
-              "url": "https://autodidact.co.il/videos/ch5-react-intro.mp4"
+              "url": "https://autodidact.co.il//api/videos/placeholder_autodidact_rtl_full.mp4"
             }
           ],
           "assignment": {

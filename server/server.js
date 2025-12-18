@@ -1,20 +1,41 @@
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const OpenAI = require("openai");
+const nodemailer = require("nodemailer");
+const { error } = require("console");
+const fs = require("fs").promises;
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 
-const express = require('express');
-const cors = require('cors');
-const OpenAI = require('openai');
-const nodemailer = require('nodemailer');
-const { error } = require('console');
-const fs = require('fs').promises;
-const path = require('path')
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
+
 app.use(cors());
+
 app.use((req, res, next) => {
   res.header("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
 app.use(express.json());
+
+// Middleware פשוט לבדיקה (לדוגמה)
+app.use((req, res, next) => {
+  // כאן אפשר לבדוק JWT או סשן משתמש
+  const authorized = true; // לשם הדגמה
+  if (!authorized) return res.status(403).send("Forbidden");
+  next();
+});
+
+// הגדרות S3
+const s3 = new S3Client({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+const BUCKET_NAME = "myawsbucketgrinsh";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -287,17 +308,59 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-// 📁 שיתוף קבצי וידאו סטטיים
-app.use("/videos", express.static("public/videos"));
+app.get("/api/videos/:filename", async (req, res) => {
+  const { filename } = req.params;
 
-const buildPath = path.join(__dirname, "..", "client", "build");
+  console.log("proxy video request:", filename);
+  try {
+    const s3Object = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: filename,
+      })
+    );
 
-// שירות קבצים סטטיים
-app.use(express.static(buildPath));
+    // כותרות פשוטות – בלי Range
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Accept-Ranges", "none");
 
-// SPA fallback
+    // סטרימינג מהשרת ללקוח
+    s3Object.Body.pipe(res);
+  } catch (err) {
+    console.error("video proxy error:", err);
+
+    // אם נטפרי חסם – שליחת iframe שמחקה את דף החסימה
+    if (err?.$metadata?.httpStatusCode === 418 && err?.body?.iframe?.src) {
+      const iframeSrc = err.body.iframe.src;
+      res.status(418).send(`
+        <!DOCTYPE html>
+        <html lang="he" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>וידאו חסום</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; }
+            iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${iframeSrc}" id="netfree_block_iframe" name="netfree-block-iframe"></iframe>
+        </body>
+        </html>
+      `);
+      return;
+    }
+
+    res.status(500).send("Failed to load video");
+  }
+});
+
+
+//שירות ריאקט סטטי
+app.use(express.static(path.join(__dirname, "build")));
+
 app.get("*", (req, res) => {
-  res.sendFile(path.join(buildPath, "index.html"));
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 // const PORT = process.env.PORT || 5000;

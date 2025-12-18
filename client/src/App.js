@@ -3,6 +3,7 @@ import React, {
   useEffect,
   createContext,
   useContext,
+  useRef,
   useMemo,
 } from "react";
 import {
@@ -14,11 +15,12 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import "./App.css";
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
-
-// const API_URL = "https://autodidact.co.il";
+const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
+//const API_URL = 'https://autodidact.co.il';
 
 const apiService = {
   getUsers: async () => {
@@ -533,15 +535,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
                 <p className="text-sm text-gray-600 mb-2 font-semibold">
                   {video.title}
                 </p>
-                <video
-                  width="100%"
-                  height="300"
-                  controls
-                  className="rounded-lg bg-black"
-                >
-                  <source src={video.url} type="video/mp4" />
-                  הדפדפן שלך לא תומך בסרטוני HTML5
-                </video>
+                <VideoPlayer filename={video.url} />
               </div>
             ))}
           </div>
@@ -659,6 +653,75 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
+const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
+  const videoRef = useRef(null);
+  const [blockedHtml, setBlockedHtml] = useState(null);
+  const [fade, setFade] = useState(false);
+
+  useEffect(() => {
+    const checkVideo = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/videos/${filename}`
+        );
+        if (response.status === 418) {
+          const htmlRaw = await response.text();
+          const htmlClean = htmlRaw.replace(/<style[\s\S]*?<\/style>/gi, "");
+
+          setFade(true);
+          setTimeout(() => setBlockedHtml(htmlClean), 300);
+        }
+      } catch (err) {
+        console.error("Error fetching video:", err);
+      }
+    };
+
+    checkVideo();
+  }, [filename]);
+
+  return (
+    <div
+      style={{
+        width,
+        height,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {blockedHtml ? (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            opacity: fade ? 1 : 0,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+          dangerouslySetInnerHTML={{ __html: blockedHtml }}
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          controls
+          width="100%"
+          height="100%"
+          style={{
+            display: "block",
+            opacity: fade ? 0 : 1,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+        >
+          <source
+            src={`http://localhost:5000/api/videos/${filename}`}
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+      )}
+    </div>
+  );
+};
+
+
 const MarksPage = ({ user, course, onBack }) => {
   const courseMarks = user.marks.filter((m) => m.courseId === course.id);
 
@@ -717,28 +780,6 @@ const MarksPage = ({ user, course, onBack }) => {
       </div>
     </div>
   );
-  // return (
-  //   <div className="p-8" dir="rtl">
-  //     <button onClick={onBack} className="mb-4">← חזרה</button>
-
-  //     <h1 className="text-3xl mb-6">ציונים – {course.name}</h1>
-
-  //     {course.chapters.map((chapter) => {
-  //       const mark = getMarkForChapter(chapter.id);
-
-  //       return (
-  //         <div key={chapter.id} className="bg-white p-4 mb-3 rounded shadow">
-  //           <div className="flex justify-between">
-  //             <strong>{chapter.title}</strong>
-  //             {mark ? `${mark.grade}/100` : "לא הוגש"}
-  //           </div>
-
-  //           {mark && <p className="mt-2 text-gray-700">{mark.feedback}</p>}
-  //         </div>
-  //       );
-  //     })}
-  //   </div>
-  // );
 };
 
 const LogOutButton = ({ onLogOut }) => {
