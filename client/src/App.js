@@ -1,4 +1,11 @@
-import React, { useState, useEffect, createContext, useContext, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useRef,
+  useMemo,
+} from "react";
 import {
   ChevronRight,
   Play,
@@ -8,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import "./App.css";
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
@@ -21,8 +29,12 @@ const apiService = {
   },
 
   getCourses: async () => {
-    const res = await fetch(`${API_URL}/api/courses`);
-    return res.json();
+    try {
+      const res = await fetch(`${API_URL}/api/courses`);
+      return res.json();
+    } catch (e) {
+      throw e;
+    }
   },
 
   getSchools: async () => {
@@ -510,15 +522,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
                 <p className="text-sm text-gray-600 mb-2 font-semibold">
                   {video.title}
                 </p>
-                <video
-                  width="100%"
-                  height="300"
-                  controls
-                  className="rounded-lg bg-black"
-                >
-                  <source src={video.url} type="video/mp4" />
-                  הדפדפן שלך לא תומך בסרטוני HTML5
-                </video>
+                <VideoPlayer filename={video.url} />
               </div>
             ))}
           </div>
@@ -635,6 +639,75 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
     </div>
   );
 };
+
+const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
+  const videoRef = useRef(null);
+  const [blockedHtml, setBlockedHtml] = useState(null);
+  const [fade, setFade] = useState(false);
+
+  useEffect(() => {
+    const checkVideo = async () => {
+      try {
+        const response = await fetch(
+          `${REACT_APP_VIDEOS_URL}/${filename}`
+        );
+        if (response.status === 418) {
+          const htmlRaw = await response.text();
+          const htmlClean = htmlRaw.replace(/<style[\s\S]*?<\/style>/gi, "");
+
+          setFade(true);
+          setTimeout(() => setBlockedHtml(htmlClean), 300);
+        }
+      } catch (err) {
+        console.error("Error fetching video:", err);
+      }
+    };
+
+    checkVideo();
+  }, [filename]);
+
+  return (
+    <div
+      style={{
+        width,
+        height,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {blockedHtml ? (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            opacity: fade ? 1 : 0,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+          dangerouslySetInnerHTML={{ __html: blockedHtml }}
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          controls
+          width="100%"
+          height="100%"
+          style={{
+            display: "block",
+            opacity: fade ? 0 : 1,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+        >
+          <source
+            src={`${REACT_APP_VIDEOS_URL}/${filename}`}
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+      )}
+    </div>
+  );
+};
+
 
 const MarksPage = ({ user, course, onBack }) => {
   const courseMarks = user.marks.filter((m) => m.courseId === course.id);
