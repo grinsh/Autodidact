@@ -97,6 +97,20 @@ const apiService = {
     if (!res.ok) throw new Error("failed to save mark");
     return res.json();
   },
+  checkIfSubmitted: async (userId, courseId, chapterId) => {
+    const result = await fetch(`${API_URL}/api/api/check-submission`, {
+      method: 'POST',
+      headers: { "content-Type": "application/json" },
+      body: JSON.stringify(
+        userId,
+        courseId,
+        chapterId
+      )
+    });
+    if (!res.ok)
+      throw new Error("failed to check subbmition");
+    return res.json();
+  }
 };
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
@@ -399,6 +413,12 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
     setLoading(true);
     setError(null);
     try {
+      const isExistSubmission = await apiService.checkIfSubmitted(user.id, course.id, chapter.id)
+      if(isExistSubmission.isSubmitted)
+      {
+        alert( "הגשת כבר את המטלה לפרק זה, אין באפשרותך להגיש פעם נוספת ! ");
+        return;
+      }
       const result = await apiService.checkAssignment(
         code,
         chapter.assignment.description,
@@ -646,8 +666,8 @@ const MarksPage = ({ user, course, onBack }) => {
             mark?.grade >= 85
               ? "text-green-600"
               : mark?.grade >= 60
-              ? "text-yellow-600"
-              : "text-red-600";
+                ? "text-yellow-600"
+                : "text-red-600";
 
           return (
             <div

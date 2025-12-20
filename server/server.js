@@ -1,12 +1,13 @@
+const express = require("express");
+const cors = require("cors");
+const OpenAI = require("openai");
+const { createTransport } = require("nodemailer");
+const { promises: fs } = require("fs");
+const path = require("path");
+const dotenv = require("dotenv");
+dotenv.config();
 
-const express = require('express');
-const cors = require('cors');
-const OpenAI = require('openai');
-const nodemailer = require('nodemailer');
-const { error } = require('console');
-const fs = require('fs').promises;
-const path = require('path')
-require('dotenv').config();
+
 
 const app = express();
 app.use(cors());
@@ -14,7 +15,7 @@ app.use((req, res, next) => {
   res.header("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
-app.use(express.json());
+app.use(json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -45,7 +46,7 @@ app.get('/api/users/:userId/courses/:courseId', async (req, res) => {
       mark => mark.courseId === Number(courseId)
     );
 
-    const numberOfSubbmitions = (submissionsForCourse.length===0) ? 0 : submissionsForCourse.length;
+    const numberOfSubbmitions = (submissionsForCourse.length === 0) ? 0 : submissionsForCourse.length;
     const numberOfChapters = course.chapters.length;
     const percentDone = (numberOfSubbmitions * 100) / numberOfChapters;
     const percentToDo = 100 - percentDone;
@@ -66,8 +67,9 @@ app.get('/api/users/:userId/courses/:courseId', async (req, res) => {
 })
 
 
+
 // ✉️ הגדרת nodemailer
-const transporter = nodemailer.createTransport({
+const transporter = createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
@@ -83,7 +85,7 @@ app.post("/api/save-mark", async (req, res) => {
   const { studentId, courseId, chapterId, grade, feedback } = req.body;
 
   try {
-    const filePath = path.join(__dirname, "data", "users.json");
+    const filePath = join(__dirname, "data", "users.json");
     const fileData = await fs.readFile(filePath, "utf-8");
     const usersData = JSON.parse(fileData);
     const date = new Date();
@@ -109,6 +111,22 @@ app.post("/api/save-mark", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch " });
   }
 });
+
+// בדיקה אם המשתמש הגיש כבר מטלה 
+app.post("/api/check-submission", async (req, res) => {
+  const { userId, courseId, chapterId } = req.body;
+  const users = require('./data/users.json').users;
+  const user = users.find(u => u.id === Number(userId))
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  const isExistMark = user.marks.find(mark => mark.courseId === Number(courseId) &&
+    mark.chapterId === Number(chapterId))
+  if (isExistMark)
+    res.send({ isSubmitted: true })
+  else
+    res.send({ isSubmitted: false })
+})
 
 // 📌 בדיקת קוד עם OpenAI
 app.post("/api/check-assignment", async (req, res) => {
@@ -263,16 +281,16 @@ app.post("/api/login", (req, res) => {
 });
 
 // 📁 שיתוף קבצי וידאו סטטיים
-app.use("/videos", express.static("public/videos"));
+app.use("/videos", expressStatic("public/videos"));
 
-const buildPath = path.join(__dirname, "..", "client", "build");
+const buildPath = join(__dirname, "..", "client", "build");
 
 // שירות קבצים סטטיים
-app.use(express.static(buildPath));
+app.use(expressStatic(buildPath));
 
 // SPA fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(buildPath, "index.html"));
+  res.sendFile(join(buildPath, "index.html"));
 });
 
 // const PORT = process.env.PORT || 5000;
