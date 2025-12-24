@@ -137,16 +137,10 @@ const apiService = {
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
 const LoginPage = ({ onLogin, loading }) => {
   const [schools, setSchools] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [textSchool, setTextSchool] = useState("");
-  const [filteredSchool, setfilteredSchools] = useState([])
-  const [filteredUsers, setFilteredUsers] = useState([])
   const [schoolCode, setSchoolCode] = useState("");
-  const [userID, setUserId] = useState(null);
-  const [textUser, setTextUser] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [userName, setUserName] = useState("");
   const [error, setError] = useState("");
-
-
 
   // טעינת רשימת בתי ספר
   useEffect(() => {
@@ -163,49 +157,31 @@ const LoginPage = ({ onLogin, loading }) => {
     fetchSchools();
   }, []);
 
-  // טעינת רשימת המשתמשים
+  // כשהמשתמשת הכניסה קוד סמינר - אז שמים את שם הסמינר ב - state המתאים 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const users = await apiService.getUsers();
-        setUsers(users);
-      } catch (error) {
-        console.error(error);
-        setError("שגיאה בטעינת המשתמשים")
-      }
+    if (!schoolCode) {
+      setSchoolCode("");
+      return;
     }
-    fetchUsers();
-  }
-    , [])
-
-  // סינון שמות המשתמשים לפי מה שהמשתמש הכניס
-  useEffect(() => {
-    if (textUser && !userID) {
-      const results = users.filter(user => user.name.toLowerCase().startsWith(textUser))
-      setFilteredUsers(results)
+    const school = schools.find(sem => String(sem.code) === (String(schoolCode)));
+    if (school) {
+      setSchoolName(school.name);
+    } else {
+      return;
     }
-  }, [textUser])
-
-
-  // סינון בתי ספר לפי הפלט שהמשתמש מכניס
-  useEffect(() => {
-    if (textSchool && !schoolCode) {
-      const results = schools.filter(school => school.name.toLowerCase().startsWith(textSchool))
-      setfilteredSchools(results)
-    }
-  }, [textSchool])
+  }, [schoolCode])
 
   // התחברות
   const handleLogin = async () => {
     setError("");
 
-    if (!schoolCode || !textUser.trim()) {
+    if (!schoolCode || !userName.trim()) {
       setError("נא למלא את כל השדות");
       return;
     }
 
     try {
-      const { ok, data } = await apiService.login(schoolCode, textUser.trim());
+      const { ok, data } = await apiService.login(schoolCode, userName.trim());
 
       if (!ok) {
         setError(data.error || "שגיאה בהתחברות");
@@ -218,27 +194,6 @@ const LoginPage = ({ onLogin, loading }) => {
       setError("תקלה בשרת");
     }
   };
-  // כשהמשתמש מכניס input כלשהוא 
-  const onChangeHandlerSchool = (event) => {
-    const value = event.target.value;
-    setTextSchool(value);
-    if (!value) {
-      setfilteredSchools([]);
-      setSchoolCode("");
-      return;
-    }
-  }
-
-  const onChangeHandlerUser = (event) => {
-    const value = event.target.value;
-    setTextUser(value);
-    if (!value) {
-      setFilteredUsers([]);
-      setTextUser("");
-      setUserId(null)
-      return;
-    }
-  }
 
   return (
     <div
@@ -257,40 +212,35 @@ const LoginPage = ({ onLogin, loading }) => {
           </div>
         )}
 
-        {/* בחירת בית ספר */}
+        {/* בחירת סמינר */}
+
         <div className="mb-5">
-          <label className="font-semibold">בחרי בית ספר:</label>
+          <label className="font-semibold">בחרי סמינר:</label>
           <input
             type="text"
             className="w-full mt-2 border p-2 rounded-lg"
-            value={textSchool}
+            placeholder="הכניסי קוד סמינר"
+            value={schoolCode}
             onChange={(e) => {
-              onChangeHandlerSchool(e);
+              const value = e.target.value;
+              setSchoolCode(value);
+              if (!value) setSchoolName("");
+
             }}
           />
-          {filteredSchool.length > 0 && (
-            <div className="bg-white border rounded-lg shadow mt-2 max-h-48 overflow-y-auto">
-              {filteredSchool.map((school) => (
-                <button
-                  key={school.code}
-                  onClick={(event) => {
-                    setfilteredSchools([]);
-                    setTextSchool(event.target.innerText);
-                    setSchoolCode(school.code);
-                  }}
-                  className="
-                  w-full text-right px-4 py-2
-                  hover:bg-purple-100
-                  transition
-                  border-b last:border-b-0
-                  "
-                >
-                  {school.name}
-                </button>
-              ))}
-            </div>
+
+          {/* הצגת שם סמינר מתחת לשדה */}
+          {schoolName && (
+            <p className="mt-2 text-sm text-purple-600 font-semibold">
+              {schoolName}
+            </p>
           )}
+          {!schoolName && schoolCode &&
+            <p className="mt-2 text-sm text-purple-600 font-semibold">
+              קוד סמינר לא נכון
+            </p>}
         </div>
+
 
         {/* שם משתמש */}
         <div className="mb-5">
@@ -299,29 +249,9 @@ const LoginPage = ({ onLogin, loading }) => {
             type="text"
             className="w-full mt-2 border p-2 rounded-lg"
             placeholder="הקלידי את שמך..."
-            value={textUser}
-            onChange={(e) => { onChangeHandlerUser(e); }}
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
           />
-          {filteredUsers.length > 0 && filteredUsers.map(user =>
-            <button
-              key={user.id}
-              onClick={(event) => {
-                setUserId(user.id)
-                setTextUser(event.target.innerText);
-                setFilteredUsers([]);
-                return;
-              }}
-              className="
-                  w-full text-right px-4 py-2
-                  hover:bg-purple-100
-                  transition
-                  border-b last:border-b-0
-                  "
-            >
-              {user.name}
-            </button>
-          )
-          }
         </div>
 
         {/* כפתור התחברות */}
@@ -336,6 +266,7 @@ const LoginPage = ({ onLogin, loading }) => {
     </div>
   );
 };
+
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
@@ -467,6 +398,7 @@ const CoursePage = ({
   onBack,
   courses,
   onShowMarks,
+  onSelectChapterWithoutVideos
 }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
@@ -493,7 +425,13 @@ const CoursePage = ({
           {course.chapters.map((chapter, idx) => (
             <div
               key={chapter.id}
-              onClick={() => onSelectChapter(chapter)}
+              onClick={() => {
+                // chapter.videos ? onSelectChapter(chapter) : onSelectChapterWithoutVideos;
+                if (!chapter.videos || chapter.videos.length === 0) {
+                  onSelectChapterWithoutVideos();
+                }
+                else { onSelectChapter(chapter); }
+              }}
               className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition transform hover:translate-x-1"
             >
               <div className="flex items-center">
@@ -746,6 +684,41 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
+
+// 📺 עמוד הודעה — הפרק יעלה בקרוב
+const MessagePageChapter = ({ onBack }) => {
+  return (
+    <div
+      className="min-h-screen bg-gray-50 flex items-center justify-center p-8"
+      dir="rtl"
+    >
+      <div className="bg-white shadow-2xl rounded-2xl p-10 max-w-md w-full text-center">
+        <h1 className="text-4xl font-bold text-purple-600 mb-4">
+          ⚡ הפרק יעלה בקרוב!
+        </h1>
+        <p className="text-gray-600 text-lg mb-8">
+          הצוות שלנו עובד על זה — שווה לחזור לכאן בעוד כמה ימים 💜
+        </p>
+
+        {/* קונטיינר שמרכז את הכפתור */}
+        <div className="flex justify-center">
+          <button
+            onClick={onBack}
+            className="
+              bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold px-6 py-3 rounded-full shadow-md
+              hover:from-purple-600 hover:to-blue-600 hover:shadow-lg hover:scale-105
+              active:scale-95 transition-all duration-300 flex items-center justify-center gap-2
+            " >
+            <span className="text-lg">←</span>
+            <span>חזרה לקורס</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
   const videoRef = useRef(null);
   const [blockedHtml, setBlockedHtml] = useState(null);
@@ -755,7 +728,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
     const checkVideo = async () => {
       try {
         const response = await fetch(
-          `${REACT_APP_VIDEOS_URL}/${filename}`
+          // `${REACT_APP_VIDEOS_URL}/${filename}`
         );
         if (response.status === 418) {
           const htmlRaw = await response.text();
@@ -804,7 +777,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
           }}
         >
           <source
-            src={`${REACT_APP_VIDEOS_URL}/${filename}`}
+            // src={`${REACT_APP_VIDEOS_URL}/${filename}`}
             type="video/mp4"
           />
           Your browser does not support the video tag.
@@ -905,7 +878,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState("login");
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null)
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -943,16 +916,26 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (currentPage === "chapter") {
+    if (currentPage === "MessagePageChapter") {
       setCurrentPage("course");
-    } else if (currentPage === "course") {
-      setCurrentPage("dashboard");
+    }
+    else {
+      if (currentPage === "chapter") {
+        setCurrentPage("course");
+      } else if (currentPage === "course") {
+        setCurrentPage("dashboard");
+      }
     }
   };
 
   const handleSeeMarks = () => {
     setCurrentPage("marks");
   };
+
+  const handleSelectChapterWithoutVideos = () => {
+    setCurrentPage("MessagePageChapter")
+  }
+
   return (
     <div>
       {currentPage === "login" && (
@@ -974,6 +957,7 @@ export default function App() {
           onBack={handleBack}
           courses={courses}
           onShowMarks={handleSeeMarks}
+          onSelectChapterWithoutVideos={handleSelectChapterWithoutVideos}
         />
       )}
       {currentPage === "chapter" && (
@@ -991,7 +975,15 @@ export default function App() {
           onBack={() => setCurrentPage("course")}
         />
       )}
-      {currentPage !== "login" && <LogOutButton onLogOut={handleLogOut} />}
+      {currentPage !== "login" &&
+        <LogOutButton onLogOut={handleLogOut} />
+      }
+      {currentPage === "MessagePageChapter" &&
+        (<MessagePageChapter
+          onBack={
+            handleBack
+          } />)
+      }
     </div>
   );
 }

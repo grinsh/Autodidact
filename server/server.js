@@ -254,7 +254,7 @@ app.get("/api/courses", (req, res) => {
 // 📚 קבלת רשימת סמינרים
 app.get("/api/schools", (req, res) => {
   try {
-    const schools = require("./data/schools.json"); 
+    const schools = require("./data/schools.json");
     res.json(schools);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch schools" });
@@ -301,7 +301,9 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-app.get("/api/videos/:filename", async (req, res) => {
+
+
+app.get("/api/videos/:filename(*)", async (req, res) => {
   const { filename } = req.params;
 
   console.log("proxy video request:", filename);

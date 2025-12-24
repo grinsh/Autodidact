@@ -31,11 +31,11 @@
           "videos": [
             {
               "title": "מבוא ל-CSS",
-               "url": "placeholder_autodidact_rtl_full.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             },
             {
               "title": "Flexbox",
-               "url": "placeholder_autodidact_rtl_full.mp4"
+              "url": "placeholder_autodidact_rtl_full.mp4"
             }
           ],
           "assignment": {
@@ -51,33 +51,20 @@
       "description": "למדו JavaScript ללא דאגות",
       "chapters": [
         {
-          "id": 3,
+          "id": 1,
           "title": "משתנים ותפעולים",
           "description": "הכירו עם משתנים, טיפים נתונים וביטויים",
-          "videos": [
-            {
-              "title": "משתנים ב-JS",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            },
-            {
-              "title": "פעולות ובקרת זרימה",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
-          ],
+          "videos": [],
           "assignment": {
             "title": "מחשבון פשוט",
             "description": "כתבו JavaScript שמחשב: חיבור, חיסור, כפל וחילוק של שני מספרים. הציגו את התוצאה ב-HTML."
           }
         },
         {
-          "id": 4,
+          "id": 2,
           "title": "פונקציות וprocedures",
           "description": "שימוש בפונקציות לארגון קוד",
           "videos": [
-            {
-              "title": "פונקציות בסיסיות",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
           ],
           "assignment": {
             "title": "ספריית פונקציות",
@@ -253,6 +240,143 @@
             "title": "",
             "description": ""
           }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Node.js – פיתוח צד שרת ",
+      "description": "קורס מקיף ללימוד פיתוח צד שרת עם Node.js, מהיסודות ועד בניית API מלא עם אימות, מסד נתונים וניהול קבצים",
+      "chapters": [
+        {
+          "id": 1,
+          "name": "מבוא ל־Node.js וסביבת עבודה",
+          "description": "היכרות עם Node.js, התקנה, הרצה, עבודה עם שורת הפקודה והבנת מודולים",
+          "videos": [
+            {
+              "title": "????",
+              "url": "placeholder_autodidact_rtl_full.mp4"
+            }
+          ],
+          "assignments": [
+            {
+              "title": " שאלה ",
+              "description": "מה למדת בשיעור זה?"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "מודולים מובנים ושרת HTTP בסיסי",
+          "description": "שימוש במודולים המובנים של Node.js כגון path, fs ו־http ובניית שרת בסיסי"
+        },
+        {
+          "id": 3,
+          "name": "ניהול חבילות ו־npm",
+          "description": "עבודה עם npm, התקנת חבילות חיצוניות, יצירת ספרייה, פרסום ל־npm ויצירת קובץ exe"
+        },
+        {
+          "id": 4,
+          "name": "תכנות אסינכרוני ב־Node.js",
+          "description": "הבנת עבודה אסינכרונית באמצעות callbacks, promises, async/await ו־promisify"
+        },
+        {
+          "id": 5,
+          "name": "תקשורת שרת–לקוח ו־Express בסיסי",
+          "description": "עקרונות תקשורת בין שרת ללקוח והקמה של שרת Express ראשון"
+        },
+        {
+          "id": 6,
+          "name": "בניית API עם Express ונתונים מדומים",
+          "description": "פיתוח שרת Express מלא המבוסס על נתוני פייק וניהול בקשות API",
+          "videos": [
+            {
+              "title": "הנחיות לצפיה בהסרטות",
+              "url": "NodeJS/Chapter6/_  הנחיות לצפיה בהסרטות.mp4"
+            },
+            {
+              "title": "מה נלמד היום בעז''ה",
+              "url": "NodeJS/Chapter6/_ מה נלמד היום בעז''ה.mp4"
+            },
+            {
+              "title": "יצירת שרת express ללא חיבור לאינטרנט",
+              "url": "NodeJS/Chapter6/1 - יצירת שרת express ללא חיבור לאינטרנט.mp4"
+            },
+            {
+              "title": "יצירת מסד נתונים מזויף ובקשות GET",
+              "url": "NodeJS/Chapter6/2 - יצירת מסד נתונים מזויף ובקשות GET.mp4"
+            },
+            {
+              "title": "params - תרגיל + פתרון",
+              "url": "NodeJS/Chapter6/3 - params - תרגיל + פתרון.mp4"
+            },
+            {
+              "title": "בקשת GET עם QUERY",
+              "url": "NodeJS/Chapter6/4 - בקשת GET עם QUERY.mp4"
+            },
+            {
+              "title": "סינון לפי כל פרמטר אפשרי - query",
+              "url": "NodeJS/Chapter6/5 - סינון לפי כל פרמטר אפשרי - query.mp4"
+            },
+            {
+              "title": "בקשת POST - כתיבת הקוד בשרת",
+              "url": "NodeJS/Chapter6/6 - בקשת POST - כתיבת הקוד בשרת.mp4"
+            },
+            {
+              "title": "השימוש ב-Postman כצד לקוח",
+              "url": "NodeJS/Chapter6/7 - השימוש ב-Postman כצד לקוח.mp4"
+            },
+            {
+              "title": "הוספת bodyparser - סוףסוף אפשר להוסיף משתמש",
+              "url": "NodeJS/Chapter6/8 - הוספת bodyparser - סוףסוף אפשר להוסיף משתמש.mp4"
+            },
+            {
+              "title": "בקשת POST - תרגיל + פתרון",
+              "url": "NodeJS/Chapter6/9 - בקשת POST - תרגיל +פתרון.mp4"
+            },
+            {
+              "title": "בקשת PUT - עדכון",
+              "url": "NodeJS/Chapter6/10 - בקשת PUT - עדכון.mp4"
+            },
+            {
+              "title": "בקשת PUT - תרגיל + פתרון",
+              "url": "NodeJS/Chapter6/11 - בקשת PUT - תרגיל  + פתרון.mp4"
+            },
+            {
+              "title": "בקשת DELETE - מחיקה",
+              "url": "NodeJS/Chapter6/12 - בקשת DELETE - מחיקה.mp4"
+            },
+            {
+              "title": "בקשת POST - תרגיל + פתרון (סיכום)",
+              "url": "NodeJS/Chapter6/13 - בקשת POST - תרגיל + פתרון.mp4"
+            }
+          ],
+          "assignment": [
+            {
+              "title": "שאלה",
+              "description": "מה למדת בשיעור זה?"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "עבודה עם מסדי נתונים והגדרות סביבה",
+          "description": "אחסון נתונים בקבצים, חיבור ל־MongoDB ו־Atlas, שימוש במשתני סביבה והיכרות עם עקרון השכבות"
+        },
+        {
+          "id": 8,
+          "name": "ארכיטקטורת שרת ו־Middleware",
+          "description": "חלוקה לשכבות, שימוש ב־routers, טיפול ב־CORS, סטטוסי תגובה ו־middleware"
+        },
+        {
+          "id": 9,
+          "name": "אימות, הרשאות וטיפול בשגיאות",
+          "description": "מימוש Authentication ו־Authorization עם JWT וניהול שגיאות בצד השרת"
+        },
+        {
+          "id": 10,
+          "name": "ניהול קבצים בצד השרת",
+          "description": "עבודה עם העלאה, שמירה והגשה של קבצים כגון תמונות ווידאו"
         }
       ]
     }
