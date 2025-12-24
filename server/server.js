@@ -66,7 +66,7 @@ app.get('/api/users/:userId/courses/:courseId', async (req, res) => {
       mark => mark.courseId === Number(courseId)
     );
 
-    const numberOfSubbmitions = (submissionsForCourse.length===0) ? 0 : submissionsForCourse.length;
+    const numberOfSubbmitions = (submissionsForCourse.length === 0) ? 0 : submissionsForCourse.length;
     const numberOfChapters = course.chapters.length;
     const percentDone = (numberOfSubbmitions * 100) / numberOfChapters;
     const percentToDo = 100 - percentDone;
@@ -85,6 +85,7 @@ app.get('/api/users/:userId/courses/:courseId', async (req, res) => {
     })
   }
 })
+
 
 
 // ✉️ הגדרת nodemailer
@@ -130,6 +131,23 @@ app.post("/api/save-mark", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch " });
   }
 });
+
+// בדיקה אם המשתמש הגיש כבר מטלה 
+app.post("/api/check-submission", async (req, res) => {
+  console.log(' בדיקה אם המשתמש הגיש כבר מטלה ');
+  const { userId, courseId, chapterId } = req.body;
+  const users = require('./data/users.json').users;
+  const user = users.find(u => u.id === Number(userId))
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  const isExistMark = user.marks.find(mark => mark.courseId === Number(courseId) &&
+    mark.chapterId === Number(chapterId))
+  if (isExistMark)
+    res.send({ isSubmitted: true })
+  else
+    res.send({ isSubmitted: false })
+})
 
 // 📌 בדיקת קוד עם OpenAI
 app.post("/api/check-assignment", async (req, res) => {
@@ -236,7 +254,7 @@ app.get("/api/courses", (req, res) => {
 // 📚 קבלת רשימת סמינרים
 app.get("/api/schools", (req, res) => {
   try {
-    const schools = require("./data/schools.json"); // נניח שיש לך קובץ schools.json
+    const schools = require("./data/schools.json");
     res.json(schools);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch schools" });
@@ -255,31 +273,6 @@ app.get("/api/school/:schoolId/students", (req, res) => {
     res.status(500).json({ error: "Failed to fetch users for school" });
   }
 });
-
-// קבלת הציונים של תלמיד מסוים בקורס מסוים
-app.get('/api/users/:userId/courses/:courseId/marks', (req, res) => {
-
-  try {
-    console.log(" GET /api/users/:userId/courses/:courseId/marks called!");
-    const { userId, courseId } = req.params;
-    console.log(" Params:", userId, courseId);
-    const data = require('./data/users.json');
-    const users = data.users;
-    const user = users.find(u => u.id === Number(userId))
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const marks = user.marks.filter(mark => mark.courseId === Number(courseId))
-    res.json(marks)
-  }
-  catch (error) {
-    res.status(500).json({
-      error: ' Failed to retrieve the students marks for the chapter'
-    });
-  }
-
-})
 
 // 🔑 התחברות לפי קוד בית ספר ושם משתמש
 app.post("/api/login", (req, res) => {
@@ -307,6 +300,8 @@ app.post("/api/login", (req, res) => {
     res.status(500).json({ error: "Login failed" });
   }
 });
+
+
 
 app.get("/api/videos/:filename(*)", async (req, res) => {
   const { filename } = req.params;

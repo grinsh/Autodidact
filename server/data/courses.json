@@ -51,34 +51,20 @@
       "description": "למדו JavaScript ללא דאגות",
       "chapters": [
         {
-          "id": 3,
+          "id": 1,
           "title": "משתנים ותפעולים",
           "description": "הכירו עם משתנים, טיפים נתונים וביטויים",
-          "videos": [
-            {
-              "title": "משתנים ב-JS",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            },
-            {
-              "title": "פעולות ובקרת זרימה",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
-          ],
+          "videos": [],
           "assignment": {
             "title": "מחשבון פשוט",
             "description": "כתבו JavaScript שמחשב: חיבור, חיסור, כפל וחילוק של שני מספרים. הציגו את התוצאה ב-HTML."
           }
         },
         {
-          "id": 4,
+          "id": 2,
           "title": "פונקציות וprocedures",
           "description": "שימוש בפונקציות לארגון קוד",
-          "videos": [
-            {
-              "title": "פונקציות בסיסיות",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
-          ],
+          "videos": [],
           "assignment": {
             "title": "ספריית פונקציות",
             "description": "כתבו 5 פונקציות שימושיות: חישוב גיל, בדיקת מספר ראשוני, המרת טמפרטורה וכו'."
@@ -266,17 +252,12 @@
           "name": "מבוא ל־Node.js וסביבת עבודה",
           "description": "היכרות עם Node.js, התקנה, הרצה, עבודה עם שורת הפקודה והבנת מודולים",
           "videos": [
-            {
-              "title": "????",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
+           
           ],
-          "assignments": [
-            {
-              "title": " שאלה ",
-              "description": "מה למדת בשיעור זה?"
-            }
-          ]
+          "assignment": {
+            "title": " שאלה ",
+            "description": "מה למדת בשיעור זה?"
+          }
         },
         {
           "id": 2,

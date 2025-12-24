@@ -19,8 +19,9 @@ import "./App.css";
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
-const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
-//const API_URL = 'https://autodidact.co.il';
+const REACT_APP_VIDEOS_URL= process.env.REACT_APP_VIDEOS_URL;
+
+// const API_URL = "https://autodidact.co.il";
 
 const apiService = {
   getUsers: async () => {
@@ -42,6 +43,13 @@ const apiService = {
     const data = await res.json();
     return data;
   },
+
+  getUsers: async () => {
+    const res = await fetch(`${API_URL}/api/users`)
+    const data = await res.json();
+    return data;
+  },
+
   login: async (schoolCode, username) => {
     const res = await fetch(`${API_URL}/api/login`, {
       method: "POST",
@@ -109,13 +117,30 @@ const apiService = {
     if (!res.ok) throw new Error("failed to save mark");
     return res.json();
   },
+  checkIfSubmitted: async (userId, courseId, chapterId) => {
+    const res = await fetch(`${API_URL}/api/check-submission`, {
+      method: 'POST',
+      headers: { "content-Type": "application/json" },
+      body: JSON.stringify(
+        {
+          userId,
+          courseId,
+          chapterId
+        }
+      )
+    });
+    if (!res.ok)
+      throw new Error("failed to check subbmition");
+    return res.json();
+  }
 };
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
 const LoginPage = ({ onLogin, loading }) => {
   const [schools, setSchools] = useState([]);
   const [schoolCode, setSchoolCode] = useState("");
-  const [username, setUsername] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [userName, setUserName] = useState("");
   const [error, setError] = useState("");
 
   // טעינת רשימת בתי ספר
@@ -133,17 +158,31 @@ const LoginPage = ({ onLogin, loading }) => {
     fetchSchools();
   }, []);
 
+  // כשהמשתמשת הכניסה קוד סמינר - אז שמים את שם הסמינר ב - state המתאים 
+  useEffect(() => {
+    if (!schoolCode) {
+      setSchoolCode("");
+      return;
+    }
+    const school = schools.find(sem => String(sem.code) === (String(schoolCode)));
+    if (school) {
+      setSchoolName(school.name);
+    } else {
+      return;
+    }
+  }, [schoolCode])
+
   // התחברות
   const handleLogin = async () => {
     setError("");
 
-    if (!schoolCode || !username.trim()) {
+    if (!schoolCode || !userName.trim()) {
       setError("נא למלא את כל השדות");
       return;
     }
 
     try {
-      const { ok, data } = await apiService.login(schoolCode, username.trim());
+      const { ok, data } = await apiService.login(schoolCode, userName.trim());
 
       if (!ok) {
         setError(data.error || "שגיאה בהתחברות");
@@ -164,10 +203,7 @@ const LoginPage = ({ onLogin, loading }) => {
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2">
-            {" "}
-            ברוכה הבאה !{" "}
-          </h1>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2"> ברוכה הבאה ! </h1>
           <p className="text-gray-600">התחברות למערכת הלמידה</p>
         </div>
 
@@ -177,32 +213,45 @@ const LoginPage = ({ onLogin, loading }) => {
           </div>
         )}
 
-        {/* בחירת בית ספר */}
+        {/* בחירת סמינר */}
+
         <div className="mb-5">
-          <label className="font-semibold">בחרי בית ספר:</label>
-          <select
+          <label className="font-semibold">בחרי סמינר:</label>
+          <input
+            type="text"
             className="w-full mt-2 border p-2 rounded-lg"
+            placeholder="הכניסי קוד סמינר"
             value={schoolCode}
-            onChange={(e) => setSchoolCode(e.target.value)}
-          >
-            <option value="">-- בחרי --</option>
-            {schools.map((school) => (
-              <option key={school.code} value={school.code}>
-                {school.name}
-              </option>
-            ))}
-          </select>
+            onChange={(e) => {
+              const value = e.target.value;
+              setSchoolCode(value);
+              if (!value) setSchoolName("");
+
+            }}
+          />
+
+          {/* הצגת שם סמינר מתחת לשדה */}
+          {schoolName && (
+            <p className="mt-2 text-sm text-purple-600 font-semibold">
+              {schoolName}
+            </p>
+          )}
+          {!schoolName && schoolCode &&
+            <p className="mt-2 text-sm text-purple-600 font-semibold">
+              קוד סמינר לא נכון
+            </p>}
         </div>
+
 
         {/* שם משתמש */}
         <div className="mb-5">
-          <label className="font-semibold">שם המשתמש (שם התלמידה):</label>
+          <label className="font-semibold">שם המשתמש:</label>
           <input
             type="text"
             className="w-full mt-2 border p-2 rounded-lg"
             placeholder="הקלידי את שמך..."
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
           />
         </div>
 
@@ -219,10 +268,9 @@ const LoginPage = ({ onLogin, loading }) => {
   );
 };
 
+
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
-  console.log("user:", user);
-  console.log("courses:", courses);
   const userCourses = courses.filter((c) => user.courses.includes(c.id));
 
   return (
@@ -256,14 +304,11 @@ const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
   );
 };
 
-// רכיב תצוגה שמראה את הסטטיסטיקה של קורס
-// 🎨 רכיב תצוגה שמראה את הסטטיסטיקה של קורס
+// רכיב תצוגה שמראה את הסטטיסטיקה של קורס 
 
 const CourseCard = ({ userId, course, onSelectCourse }) => {
   const [stat, setStat] = useState(null);
   const [loading, setLoading] = useState(true);
-  console.log("course:", course);
-  console.log("stat:", stat);
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -311,7 +356,6 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
     { name: "נותר", value: Number(stat?.percentToDo) || 0 },
   ];
 
-  console.log("🧩 pieData:", pieData);
 
   return (
     <div
@@ -319,7 +363,9 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
       className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-100"
     >
       {/* 🏷 שם הקורס */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">{courseName}</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        {courseName}
+      </h2>
 
       {/* 🧾 תיאור הקורס */}
       <p className="text-gray-600 mb-4">{courseDescription}</p>
@@ -335,32 +381,6 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
             <span className="font-semibold text-purple-700">{subCount}</span>{" "}
             מתוך {chaptersCount}
           </p>
-
-          {/* עוגת סטטיסטיקה
-          <div className="flex justify-center">
-            {Array.isArray(pieData) && pieData.length > 0 ? (
-              <PieChart width={180} height={180}>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={50}
-                  outerRadius={70}
-                  paddingAngle={3}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={index === 0 ? "#7C3AED" : "#E5E7EB"}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            ) : (
-              <p>אין נתונים להצגה</p>
-            )}
-          </div> */}
 
           <p className="text-center text-lg font-bold text-purple-700 mt-4">
             {percentDone}% הושלם
@@ -379,6 +399,7 @@ const CoursePage = ({
   onBack,
   courses,
   onShowMarks,
+  onSelectChapterWithoutVideos
 }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
@@ -405,7 +426,12 @@ const CoursePage = ({
           {course.chapters.map((chapter, idx) => (
             <div
               key={chapter.id}
-              onClick={() => onSelectChapter(chapter)}
+              onClick={() => {          
+                if (!chapter.videos || chapter.videos.length === 0) {
+                  onSelectChapterWithoutVideos();
+                }
+                else { onSelectChapter(chapter); }
+              }}
               className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition transform hover:translate-x-1"
             >
               <div className="flex items-center">
@@ -444,6 +470,11 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
     setLoading(true);
     setError(null);
     try {
+      const isExistSubmission = await apiService.checkIfSubmitted(user.id, course.id, chapter.id)
+      if (isExistSubmission.isSubmitted) {
+        alert("הגשת כבר את המטלה לפרק זה, אין באפשרותך להגיש פעם נוספת ! ");
+        return;
+      }
       const result = await apiService.checkAssignment(
         code,
         chapter.assignment.description,
@@ -653,6 +684,41 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
+
+// 📺 עמוד הודעה — הפרק יעלה בקרוב
+const MessagePageChapter = ({ onBack }) => {
+  return (
+    <div
+      className="min-h-screen bg-gray-50 flex items-center justify-center p-8"
+      dir="rtl"
+    >
+      <div className="bg-white shadow-2xl rounded-2xl p-10 max-w-md w-full text-center">
+        <h1 className="text-4xl font-bold text-purple-600 mb-4">
+          ⚡ הפרק יעלה בקרוב!
+        </h1>
+        <p className="text-gray-600 text-lg mb-8">
+          הצוות שלנו עובד על זה — שווה לחזור לכאן בעוד כמה ימים 💜
+        </p>
+
+        {/* קונטיינר שמרכז את הכפתור */}
+        <div className="flex justify-center">
+          <button
+            onClick={onBack}
+            className="
+              bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold px-6 py-3 rounded-full shadow-md
+              hover:from-purple-600 hover:to-blue-600 hover:shadow-lg hover:scale-105
+              active:scale-95 transition-all duration-300 flex items-center justify-center gap-2
+            " >
+            <span className="text-lg">←</span>
+            <span>חזרה לקורס</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
   const videoRef = useRef(null);
   const [blockedHtml, setBlockedHtml] = useState(null);
@@ -711,7 +777,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
           }}
         >
           <source
-            src={`${REACT_APP_VIDEOS_URL}/${filename}`}
+            // src={`${REACT_APP_VIDEOS_URL}/${filename}`}
             type="video/mp4"
           />
           Your browser does not support the video tag.
@@ -752,8 +818,8 @@ const MarksPage = ({ user, course, onBack }) => {
             mark?.grade >= 85
               ? "text-green-600"
               : mark?.grade >= 60
-              ? "text-yellow-600"
-              : "text-red-600";
+                ? "text-yellow-600"
+                : "text-red-600";
 
           return (
             <div
@@ -807,12 +873,13 @@ const LogOutButton = ({ onLogOut }) => {
   );
 };
 
+
 // 🎯 App הראשי
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState("login");
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null)
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -822,6 +889,7 @@ export default function App() {
   };
 
   useEffect(() => {
+
     const fetchCourses = async () => {
       try {
         const data = await apiService.getCourses();
@@ -849,16 +917,26 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (currentPage === "chapter") {
+    if (currentPage === "MessagePageChapter") {
       setCurrentPage("course");
-    } else if (currentPage === "course") {
-      setCurrentPage("dashboard");
+    }
+    else {
+      if (currentPage === "chapter") {
+        setCurrentPage("course");
+      } else if (currentPage === "course") {
+        setCurrentPage("dashboard");
+      }
     }
   };
 
   const handleSeeMarks = () => {
     setCurrentPage("marks");
   };
+
+  const handleSelectChapterWithoutVideos = () => {
+    setCurrentPage("MessagePageChapter")
+  }
+
   return (
     <div>
       {currentPage === "login" && (
@@ -880,6 +958,7 @@ export default function App() {
           onBack={handleBack}
           courses={courses}
           onShowMarks={handleSeeMarks}
+          onSelectChapterWithoutVideos={handleSelectChapterWithoutVideos}
         />
       )}
       {currentPage === "chapter" && (
@@ -897,7 +976,15 @@ export default function App() {
           onBack={() => setCurrentPage("course")}
         />
       )}
-      {currentPage !== "login" && <LogOutButton onLogOut={handleLogOut} />}
+      {currentPage !== "login" &&
+        <LogOutButton onLogOut={handleLogOut} />
+      }
+      {currentPage === "MessagePageChapter" &&
+        (<MessagePageChapter
+          onBack={
+            handleBack
+          } />)
+      }
     </div>
   );
 }
