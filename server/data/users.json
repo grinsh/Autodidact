@@ -51,6 +51,16 @@
       ],
       "marks": [],
       "schoolCode": "004"
+    },
+    {
+      "id": 5,
+      "name": "שושי טעפ",
+      "email": "",
+      "courses": [
+        5
+      ],
+      "marks": [],
+      "schoolCode": "005"
     }
   ]
 }

@@ -308,7 +308,7 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-app.get("/api/videos/:filename", async (req, res) => {
+app.get("/api/videos/:filename(*)", async (req, res) => {
   const { filename } = req.params;
 
   console.log("proxy video request:", filename);
