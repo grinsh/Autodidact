@@ -578,7 +578,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
           <h3 className="text-xl font-bold text-gray-700 mb-2">
             {chapter.assignment.title}
           </h3>
-          <p className="text-gray-600 mb-6">{chapter.assignment.description}</p>
+          <pre className="text-gray-600 mb-6">{chapter.assignment.description}</pre>
 
           <div className="bg-gray-900 text-white rounded-lg p-4 mb-4">
             <p className="text-sm text-gray-400 mb-2">הכניסו את הקוד שלכם:</p>
@@ -588,7 +588,8 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
               disabled={submitted}
               className="w-full bg-gray-800 text-white p-4 rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
               rows="8"
-              placeholder="הדביקו את הקוד כאן..."
+              placeholder=" paste your code here  ..."
+              style={{direction:"ltr"}}
             />
           </div>
 
