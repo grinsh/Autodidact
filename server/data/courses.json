@@ -1,100 +1,6 @@
 {
   "courses": [
     {
-      "id": 1,
-      "name": "HTML & CSS - יסודות",
-      "description": "קורס לימוד HTML ו-CSS מ-0 ל-100",
-      "chapters": [
-        {
-          "id": 1,
-          "title": "מבוא ל-HTML",
-          "description": "הכירו עם תגיות HTML, מבנה דף ואלמנטים בסיסיים",
-          "videos": [
-            {
-              "title": "מה זה HTML?",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            },
-            {
-              "title": "תגיות בסיסיות",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
-          ],
-          "assignment": {
-            "title": "בנו דף HTML ראשון",
-            "description": "צרו דף HTML המכיל: כותרת (h1), פסקה (p), רשימה (ul/li) ותמונה. שימרו בכתובת GitHub."
-          }
-        },
-        {
-          "id": 2,
-          "title": "CSS - עיצוב דפים",
-          "description": "למדו כיצד לעצב דפים עם צבעים, גופנים וופריסות",
-          "videos": [
-            {
-              "title": "מבוא ל-CSS",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            },
-            {
-              "title": "Flexbox",
-              "url": "placeholder_autodidact_rtl_full.mp4"
-            }
-          ],
-          "assignment": {
-            "title": "עיצוב דף HTML",
-            "description": "קחו את הדף מהפרק הקודם והוסיפו CSS: צבעים, גדולי גופנים, Flexbox ותגובתיות למכשירים קטנים."
-          }
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "name": "JavaScript - תכנות אינטראקטיבי",
-      "description": "למדו JavaScript ללא דאגות",
-      "chapters": [
-        {
-          "id": 1,
-          "title": "משתנים ותפעולים",
-          "description": "הכירו עם משתנים, טיפים נתונים וביטויים",
-          "videos": [],
-          "assignment": {
-            "title": "מחשבון פשוט",
-            "description": "כתבו JavaScript שמחשב: חיבור, חיסור, כפל וחילוק של שני מספרים. הציגו את התוצאה ב-HTML."
-          }
-        },
-        {
-          "id": 2,
-          "title": "פונקציות וprocedures",
-          "description": "שימוש בפונקציות לארגון קוד",
-          "videos": [],
-          "assignment": {
-            "title": "ספריית פונקציות",
-            "description": "כתבו 5 פונקציות שימושיות: חישוב גיל, בדיקת מספר ראשוני, המרת טמפרטורה וכו'."
-          }
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "name": "React - בניית אפליקציות מודרניות",
-      "description": "בואו ניצור אפליקציות React מדהימות",
-      "chapters": [
-        {
-          "id": 5,
-          "title": "JSX ו-Components",
-          "description": "הכירו עם JSX וניצור של Components",
-          "videos": [
-            {
-              "title": "מבוא ל-React",
-              "url": "https://autodidact.co.il//api/videos/placeholder_autodidact_rtl_full.mp4"
-            }
-          ],
-          "assignment": {
-            "title": "Todo App בסיסי",
-            "description": "בנו React App שמאפשר: הוסיפו משימות, בחרו כשלם, מחקו משימות וראו את הרשימה המעודכנת."
-          }
-        }
-      ]
-    },
-    {
       "id": 4,
       "name": "אלגוריתמיקה ותכנות JAVA",
       "description": "אלגוריתמיקה ותכנות JAVA",
@@ -271,11 +177,11 @@
           "videos": [
             {
               "title": "path ו - fs",
-              "url": "NodeJS/Chapter6/4 - path ו - fs.mp4"
+              "url": "NodeJS/Chapter2/4 - path ו - fs.mp4"
             },
             {
               "title": "תרגול קבצים - הנחיות",
-              "url": "NodeJS/Chapter6/5 - תרגול קבצים - הנחיות.mp4"
+              "url": "NodeJS/Chapter2/5 - תרגול קבצים - הנחיות.mp4"
             }
           ],
           "assignment": {
@@ -292,40 +198,41 @@
           "id": 4,
           "name": "תכנות אסינכרוני ב־Node.js",
           "description": "הבנת עבודה אסינכרונית באמצעות callbacks, promises, async/await ו־promisify",
-          "videos": [
-            {
-              "title": "1 - מה נלמד היום",
-              "url": "1 - מה נלמד היום.mp4"
-            },
-            {
-              "title": "2 - מושגים באסינכרוניות",
-              "url": "2 - מושגים באסינכרוניות.mp4"
-            },
-            {
-              "title": "3 - דוגמאות קוד",
-              "url": "3 - דוגמאות קוד.mp4"
-            },
-            {
-              "title": "4 - callback - הסבר ודוגמאות",
-              "url": "4 - callback - הסבר ודוגמאות.mp4"
-            },
-            {
-              "title": "5 - תרגול קצר + פתרון",
-              "url": "5 - תרגול קצר + פתרון.mp4"
-            },
-            {
-              "title": "6 - האובייקט promise",
-              "url": "6 - האובייקט promise.mp4"
-            },
-            {
-              "title": "7 - סיכום פרמיס ופונקציה שמחזירה פרמיס",
-              "url": "7 - סיכום פרמיס ופונקציה שמחזירה פרמיס.mp4"
-            },
-            {
-              "title": "8 - השימוש ב-awaitו-async",
-              "url": "8 - השימוש ב-awaitו-async.mp4"
-            }
-          ],
+         "videos": [
+  {
+    "title": "1 - מה נלמד היום",
+    "url": "NodeJS/Chapter4/1 - מה נלמד היום.mp4"
+  },
+  {
+    "title": "2 - מושגים באסינכרוניות",
+    "url": "NodeJS/Chapter4/2 - מושגים באסינכרוניות.mp4"
+  },
+  {
+    "title": "3 - דוגמאות קוד",
+    "url": "NodeJS/Chapter4/3 - דוגמאות קוד.mp4"
+  },
+  {
+    "title": "4 - callback - הסבר ודוגמאות",
+    "url": "NodeJS/Chapter4/4 - callback - הסבר ודוגמאות.mp4"
+  },
+  {
+    "title": "5 - תרגול קצר + פתרון",
+    "url": "NodeJS/Chapter4/5 - תרגול קצר + פתרון.mp4"
+  },
+  {
+    "title": "6 - האובייקט promise",
+    "url": "NodeJS/Chapter4/6 - האובייקט promise.mp4"
+  },
+  {
+    "title": "7 - סיכום פרמיס ופונקציה שמחזירה פרמיס",
+    "url": "NodeJS/Chapter4/7 - סיכום פרמיס ופונקציה שמחזירה פרמיס.mp4"
+  },
+  {
+    "title": "8 - השימוש ב-awaitו-async",
+    "url": "NodeJS/Chapter4/8 - השימוש ב-awaitו-async.mp4"
+  }
+],
+
           "assignment": {
             "title": "קבצים ו-promise",
             "description": "קבצים ו-promise\n\nצרי קובץ בשם txt1.txt והקלידי בו משפט כלשהוא באנגלית.\nכתבי תכנית הקוראת את התוכן של הקובץ txt1.txt והופכת אותו למחרוזת של אותיות גדולות.\nאת המחרוזת החדשה כתבי לקובץ בשם txt2.txt.\n\n1. פתרי את התרגיל ע\"י מודול fs בדרך שנלמדה בעבר.\n2. צפי בהסרטה מדקה 08:35 וראי כיצד ניתן להפוך את הפונקציות של מודול fs ל-promise.\n(יש עוד דרכים. הראיתי אחת)\n3. כתבי את הקוד עם שימוש בפונקציות ה-promise. השתמשי בתחביר של then ו-catch.\n(הדרכה: הפעילי את פונקצית הקריאה של הקובץ, ב-then קבלי את המידע, עבדי אותו והפעילי את הפונקציה של הכתיבה לקובץ.\nצרי עוד then – שיופעל אחרי סיום הכתיבה לקובץ, ולאחריו catch למקרה של שגיאה)\n4. כתבי את הקוד הפעם עם תחביר async ו-await.\n(הדרכה: הכניסי את הקוד לתוך פונקציה.)\n\nתוכלי להיעזר בפתרון שאני מדגימה בהסרטות.\n\nבהצלחה רבה!!!"
