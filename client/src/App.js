@@ -19,7 +19,7 @@ import "./App.css";
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
-const REACT_APP_VIDEOS_URL= process.env.REACT_APP_VIDEOS_URL;
+const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
 
 // const API_URL = "https://autodidact.co.il";
 
@@ -45,7 +45,7 @@ const apiService = {
   },
 
   getUsers: async () => {
-    const res = await fetch(`${API_URL}/api/users`)
+    const res = await fetch(`${API_URL}/api/users`);
     const data = await res.json();
     return data;
   },
@@ -119,20 +119,17 @@ const apiService = {
   },
   checkIfSubmitted: async (userId, courseId, chapterId) => {
     const res = await fetch(`${API_URL}/api/check-submission`, {
-      method: 'POST',
+      method: "POST",
       headers: { "content-Type": "application/json" },
-      body: JSON.stringify(
-        {
-          userId,
-          courseId,
-          chapterId
-        }
-      )
+      body: JSON.stringify({
+        userId,
+        courseId,
+        chapterId,
+      }),
     });
-    if (!res.ok)
-      throw new Error("failed to check subbmition");
+    if (!res.ok) throw new Error("failed to check subbmition");
     return res.json();
-  }
+  },
 };
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
@@ -158,19 +155,21 @@ const LoginPage = ({ onLogin, loading }) => {
     fetchSchools();
   }, []);
 
-  // כשהמשתמשת הכניסה קוד סמינר - אז שמים את שם הסמינר ב - state המתאים 
+  // כשהמשתמשת הכניסה קוד סמינר - אז שמים את שם הסמינר ב - state המתאים
   useEffect(() => {
     if (!schoolCode) {
       setSchoolCode("");
       return;
     }
-    const school = schools.find(sem => String(sem.code) === (String(schoolCode)));
+    const school = schools.find(
+      (sem) => String(sem.code) === String(schoolCode)
+    );
     if (school) {
       setSchoolName(school.name);
     } else {
       return;
     }
-  }, [schoolCode])
+  }, [schoolCode]);
 
   // התחברות
   const handleLogin = async () => {
@@ -203,7 +202,10 @@ const LoginPage = ({ onLogin, loading }) => {
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-600 mb-2"> ברוכה הבאה ! </h1>
+          <h1 className="text-4xl font-bold text-purple-600 mb-2">
+            {" "}
+            ברוכה הבאה !{" "}
+          </h1>
           <p className="text-gray-600">התחברות למערכת הלמידה</p>
         </div>
 
@@ -226,7 +228,6 @@ const LoginPage = ({ onLogin, loading }) => {
               const value = e.target.value;
               setSchoolCode(value);
               if (!value) setSchoolName("");
-
             }}
           />
 
@@ -236,12 +237,12 @@ const LoginPage = ({ onLogin, loading }) => {
               {schoolName}
             </p>
           )}
-          {!schoolName && schoolCode &&
+          {!schoolName && schoolCode && (
             <p className="mt-2 text-sm text-purple-600 font-semibold">
               קוד סמינר לא נכון
-            </p>}
+            </p>
+          )}
         </div>
-
 
         {/* שם משתמש */}
         <div className="mb-5">
@@ -267,7 +268,6 @@ const LoginPage = ({ onLogin, loading }) => {
     </div>
   );
 };
-
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
@@ -304,7 +304,7 @@ const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
   );
 };
 
-// רכיב תצוגה שמראה את הסטטיסטיקה של קורס 
+// רכיב תצוגה שמראה את הסטטיסטיקה של קורס
 
 const CourseCard = ({ userId, course, onSelectCourse }) => {
   const [stat, setStat] = useState(null);
@@ -356,16 +356,13 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
     { name: "נותר", value: Number(stat?.percentToDo) || 0 },
   ];
 
-
   return (
     <div
       onClick={() => onSelectCourse(course)}
       className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-100"
     >
       {/* 🏷 שם הקורס */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
-        {courseName}
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">{courseName}</h2>
 
       {/* 🧾 תיאור הקורס */}
       <p className="text-gray-600 mb-4">{courseDescription}</p>
@@ -391,7 +388,7 @@ const CourseCard = ({ userId, course, onSelectCourse }) => {
   );
 };
 
-// 📖 דף הקורס - מראה את הפרקים שך הקורס המסוים
+// 📖 דף הקורס - מראה את הפרקים של הקורס המסוים
 const CoursePage = ({
   user,
   course,
@@ -399,11 +396,14 @@ const CoursePage = ({
   onBack,
   courses,
   onShowMarks,
-  onSelectChapterWithoutVideos
+  onSelectChapterWithoutVideos,
 }) => {
+  const [showInstructions, setShowInstructions] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
       <div className="max-w-6xl mx-auto">
+        {/* כפתור חזרה */}
         <button
           onClick={onBack}
           className="mb-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition"
@@ -411,9 +411,11 @@ const CoursePage = ({
           ← חזרה לקורסים
         </button>
 
+        {/* כותרת הקורס */}
         <h1 className="text-4xl font-bold text-gray-800 mb-2">{course.name}</h1>
         <p className="text-gray-600 mb-8">{course.description}</p>
 
+        {/* כפתור הציונים */}
         <button
           onClick={onShowMarks}
           className="mb-6 bg-blue-600 text-white px-4 py-2 rounded"
@@ -421,16 +423,28 @@ const CoursePage = ({
           📊 הציונים שלי בקורס
         </button>
 
+        {/* כפתור הנחיות */}
+        {course.instructions && course.instructions.length > 0 && (
+          <button
+            onClick={() => setShowInstructions(true)}
+            className="mb-6 ml-4 bg-green-600 text-white px-4 py-2 rounded"
+          >
+            📖 הצג הנחיות עבודה
+          </button>
+        )}
+
+        {/* רשימת פרקים */}
         <h2 className="text-2xl font-bold text-gray-800 mb-4">📚 הפרקים:</h2>
         <div className="space-y-4">
           {course.chapters.map((chapter, idx) => (
             <div
               key={chapter.id}
-              onClick={() => {          
+              onClick={() => {
                 if (!chapter.videos || chapter.videos.length === 0) {
                   onSelectChapterWithoutVideos();
+                } else {
+                  onSelectChapter(chapter);
                 }
-                else { onSelectChapter(chapter); }
               }}
               className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition transform hover:translate-x-1"
             >
@@ -448,6 +462,31 @@ const CoursePage = ({
             </div>
           ))}
         </div>
+
+        {/* Modal להצגת הנחיות */}
+        {showInstructions && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 relative">
+              <h2 className="text-2xl font-bold mb-4">הנחיות עבודה</h2>
+              <div className="max-h-96 overflow-y-auto">
+                 <div className="max-h-96 overflow-y-auto space-y-4">
+                {course.instructions.map((ins, idx) => (
+                  <div key={idx}>
+                    <h3 className="text-xl font-semibold mb-1">{ins.section}</h3>
+                    <p className="text-gray-700 whitespace-pre-wrap">{ins.content}</p>
+                  </div>
+                ))}
+              </div>
+              </div>
+              <button
+                onClick={() => setShowInstructions(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 font-bold"
+              >
+                X
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -470,7 +509,11 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
     setLoading(true);
     setError(null);
     try {
-      const isExistSubmission = await apiService.checkIfSubmitted(user.id, course.id, chapter.id)
+      const isExistSubmission = await apiService.checkIfSubmitted(
+        user.id,
+        course.id,
+        chapter.id
+      );
       if (isExistSubmission.isSubmitted) {
         alert("הגשת כבר את המטלה לפרק זה, אין באפשרותך להגיש פעם נוספת ! ");
         return;
@@ -578,7 +621,9 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
           <h3 className="text-xl font-bold text-gray-700 mb-2">
             {chapter.assignment.title}
           </h3>
-          <pre className="text-gray-600 mb-6">{chapter.assignment.description}</pre>
+          <pre className="text-gray-600 mb-6">
+            {chapter.assignment.description}
+          </pre>
 
           <div className="bg-gray-900 text-white rounded-lg p-4 mb-4">
             <p className="text-sm text-gray-400 mb-2">הכניסו את הקוד שלכם:</p>
@@ -589,7 +634,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
               className="w-full bg-gray-800 text-white p-4 rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
               rows="8"
               placeholder=" paste your code here  ..."
-              style={{direction:"ltr"}}
+              style={{ direction: "ltr" }}
             />
           </div>
 
@@ -685,7 +730,6 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
   );
 };
 
-
 // 📺 עמוד הודעה — הפרק יעלה בקרוב
 const MessagePageChapter = ({ onBack }) => {
   return (
@@ -709,7 +753,8 @@ const MessagePageChapter = ({ onBack }) => {
               bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold px-6 py-3 rounded-full shadow-md
               hover:from-purple-600 hover:to-blue-600 hover:shadow-lg hover:scale-105
               active:scale-95 transition-all duration-300 flex items-center justify-center gap-2
-            " >
+            "
+          >
             <span className="text-lg">←</span>
             <span>חזרה לקורס</span>
           </button>
@@ -719,7 +764,6 @@ const MessagePageChapter = ({ onBack }) => {
   );
 };
 
-
 const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
   const videoRef = useRef(null);
   const [blockedHtml, setBlockedHtml] = useState(null);
@@ -728,9 +772,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
   useEffect(() => {
     const checkVideo = async () => {
       try {
-        const response = await fetch(
-          `${REACT_APP_VIDEOS_URL}/${filename}`
-        );
+        const response = await fetch(`${REACT_APP_VIDEOS_URL}/${filename}`);
         if (response.status === 418) {
           const htmlRaw = await response.text();
           const htmlClean = htmlRaw.replace(/<style[\s\S]*?<\/style>/gi, "");
@@ -788,7 +830,6 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
   );
 };
 
-
 const MarksPage = ({ user, course, onBack }) => {
   const courseMarks = user.marks.filter((m) => m.courseId === course.id);
 
@@ -819,8 +860,8 @@ const MarksPage = ({ user, course, onBack }) => {
             mark?.grade >= 85
               ? "text-green-600"
               : mark?.grade >= 60
-                ? "text-yellow-600"
-                : "text-red-600";
+              ? "text-yellow-600"
+              : "text-red-600";
 
           return (
             <div
@@ -874,13 +915,12 @@ const LogOutButton = ({ onLogOut }) => {
   );
 };
 
-
 // 🎯 App הראשי
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState("login");
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedChapter, setSelectedChapter] = useState(null)
+  const [selectedChapter, setSelectedChapter] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -890,7 +930,6 @@ export default function App() {
   };
 
   useEffect(() => {
-
     const fetchCourses = async () => {
       try {
         const data = await apiService.getCourses();
@@ -920,8 +959,7 @@ export default function App() {
   const handleBack = () => {
     if (currentPage === "MessagePageChapter") {
       setCurrentPage("course");
-    }
-    else {
+    } else {
       if (currentPage === "chapter") {
         setCurrentPage("course");
       } else if (currentPage === "course") {
@@ -935,8 +973,8 @@ export default function App() {
   };
 
   const handleSelectChapterWithoutVideos = () => {
-    setCurrentPage("MessagePageChapter")
-  }
+    setCurrentPage("MessagePageChapter");
+  };
 
   return (
     <div>
@@ -977,15 +1015,10 @@ export default function App() {
           onBack={() => setCurrentPage("course")}
         />
       )}
-      {currentPage !== "login" &&
-        <LogOutButton onLogOut={handleLogOut} />
-      }
-      {currentPage === "MessagePageChapter" &&
-        (<MessagePageChapter
-          onBack={
-            handleBack
-          } />)
-      }
+      {currentPage !== "login" && <LogOutButton onLogOut={handleLogOut} />}
+      {currentPage === "MessagePageChapter" && (
+        <MessagePageChapter onBack={handleBack} />
+      )}
     </div>
   );
 }
