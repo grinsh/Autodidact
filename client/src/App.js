@@ -541,6 +541,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
           ← חזרה ל{course.name}
         </button>
 
+
         <h1 className="text-4xl font-bold text-gray-800 mb-2">
           {chapter.title}
         </h1>
@@ -683,6 +684,9 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
     </div>
   );
 };
+
+
+
 
 
 // 📺 עמוד הודעה — הפרק יעלה בקרוב
