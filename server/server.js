@@ -199,7 +199,7 @@ app.post("/api/submit-assignment", async (req, res) => {
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: studentEmail,
+    to: process.env.ADMIN_EMAIL,
     subject: `✅ המטלה שלך נבדקה - ${courseName}`,
     html: `
       <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
