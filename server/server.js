@@ -6,26 +6,36 @@ const nodemailer = require("nodemailer");
 const { error } = require("console");
 const fs = require("fs").promises;
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken")
 
 require("dotenv").config();
+console.log("ACCESS:", process.env.ACCESS_TOKEN_SECRET);
+console.log("Working directory:", process.cwd());
+
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 
 app.use((req, res, next) => {
   res.header("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
-app.use(express.json());
 
-// Middleware פשוט לבדיקה (לדוגמה)
-app.use((req, res, next) => {
-  // כאן אפשר לבדוק JWT או סשן משתמש
-  const authorized = true; // לשם הדגמה
-  if (!authorized) return res.status(403).send("Forbidden");
-  next();
+app.use(express.json());
+app.use(cookieParser());
+
+
+
+// בנתיב /me מוחזר אובייקט JSON עם userId של המשתמש המחובר.
+app.get("/me", (req, res) => {
+  res.json({ userId: req.userId });
 });
+
 
 // הגדרות S3
 const s3 = new S3Client({
@@ -39,6 +49,190 @@ const BUCKET_NAME = "myawsbucketgrinsh";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+//logout 
+app.post("/api/logout",async (req, res) => {
+  res.cookie("refreshToken", "", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "strict",
+    expires: new Date(0),
+    path: "/api/refresh"
+  });
+  res.json({ ok: true });
+})
+
+// פונקציה שיוצרת Access Token (טוקן קצר טווח)
+function createAccessToken(user) {
+  return jwt.sign(
+    { userId: user.id }, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: '15m'
+  });
+}
+
+// פונקציה שיוצרת Refresh Token (טוקן ארוך טווח)
+function createRefreshToken(user) {
+  return jwt.sign(
+    { userId: user.id },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "1d" }
+  )
+}
+
+
+app.get("/api/videos/:filename(*)", async (req, res) => {
+  const { filename } = req.params;
+
+  console.log("proxy video request:", filename);
+  try {
+    const s3Object = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: filename,
+      })
+    );
+
+    // כותרות פשוטות – בלי Range
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Accept-Ranges", "none");
+
+    // סטרימינג מהשרת ללקוח
+    s3Object.Body.pipe(res);
+  } catch (err) {
+    console.error("video proxy error:", err);
+
+    // אם נטפרי חסם – שליחת iframe שמחקה את דף החסימה
+    if (err?.$metadata?.httpStatusCode === 418 && err?.body?.iframe?.src) {
+      const iframeSrc = err.body.iframe.src;
+      res.status(418).send(`
+        <!DOCTYPE html>
+        <html lang="he" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>וידאו חסום</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; }
+            iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${iframeSrc}" id="netfree_block_iframe" name="netfree-block-iframe"></iframe>
+        </body>
+        </html>
+      `);
+      return;
+    }
+
+    res.status(500).send("Failed to load video");
+  }
+});
+
+// 🔑 התחברות לפי קוד בית ספר ושם משתמש
+app.post("/api/login", (req, res) => {
+  const { schoolCode, username } = req.body;
+  try {
+    const schools = require("./data/schools.json");
+    const school = schools.find((s) => s.code === schoolCode);
+    if (!school) {
+      return res.status(400).json({ error: "קוד בית ספר לא תקין" });
+    }
+    const { users } = require("./data/users.json");
+    const user = users.find(
+      (u) => u.name == username && u.schoolCode === school.code
+    );
+    if (!user) {
+      const userWithWrongSchool = users.find(u => u.name === username)
+      if (userWithWrongSchool) {
+        return res.status(400).json({ error: "קוד סמינר שגוי" });
+      }
+      return res.status(400).json({ error: "משתמש לא קיים במערכת" })
+    }
+    const accessToken = createAccessToken(user);
+    const refreshToken = createRefreshToken(user);
+
+    // יוצר cookie ושולח  את זה לדפדפן 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // בפרודקשן חובה HTTPS
+      sameSite: "strict",
+      path: "/api/refresh"
+    })
+
+    return res.json({
+      accessToken,
+      success: true,
+      message: "Login successful",
+      user,
+    });
+
+  } catch (error) {
+    console.log("Login error: ", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// ריענון טוקנים 
+app.post("/api/refresh", (req, res) => {
+  // מחלץ את הטוקן refreshtokrn 
+  const token = req.cookies.refreshToken;
+  // אם אין שום טוקן - המשתמש לא מורשה 
+  if (!token) return res.statusCode(401);
+
+  let payload;
+  try {
+    // בדיקה שהטוקן תקין
+    payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
+  }
+  catch {
+    // אם יש שגיאה כלשהי → מחזירים 401 (Unauthorized)
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const user = { id: payload.userId };
+  const newAcess = createAccessToken(user);
+  const newRefresh = createRefreshToken(user);
+
+  res.cookie("refreshToken",newRefresh, {
+    httpOnly: true,
+    secure: false, // בפרודקשן חובה HTTPS
+    sameSite: "strict",
+    path: "/api/refresh"
+  })
+  res.json({ accessToken: newAcess });
+})
+
+// 📚 קבלת רשימת סמינרים
+app.get("/api/schools", (req, res) => {
+  try {
+    const schools = require("./data/schools.json");
+    res.json(schools);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch schools" });
+  }
+});
+
+// 🔐 Middleware גלובלי שבודק JWT עבור כל בקשה נכנסת
+
+app.use((req, res, next) => {
+
+  // לוקחים את כותרת Authorization מהבקשה
+  const authHeader = req.headers["authorization"];
+
+  // אם אין טוקן – מחזירים 401 (אין הרשאה)
+  if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+
+  // מוציאים את הטוקן (בפורמט Bearer <token>)
+  const token = authHeader.split(" ")[1];
+  try {
+    // אימות הטוקן מול המפתח הסודי
+    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+    // שמירת מזהה המשתמש בבקשה לשימוש בהמשך
+    req.userId = payload.userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 });
 
 // הפונקציה מחזירה אובייקט שמכיל 3 שדות:
@@ -251,15 +445,7 @@ app.get("/api/courses", (req, res) => {
   }
 });
 
-// 📚 קבלת רשימת סמינרים
-app.get("/api/schools", (req, res) => {
-  try {
-    const schools = require("./data/schools.json");
-    res.json(schools);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch schools" });
-  }
-});
+
 
 // 📚 קבלת תלמידים לפי סמינר
 app.get("/api/school/:schoolId/students", (req, res) => {
@@ -274,81 +460,6 @@ app.get("/api/school/:schoolId/students", (req, res) => {
   }
 });
 
-// 🔑 התחברות לפי קוד בית ספר ושם משתמש
-app.post("/api/login", (req, res) => {
-  const { schoolCode, username } = req.body;
-  try {
-    const schools = require("./data/schools.json");
-    const school = schools.find((s) => s.code === schoolCode);
-
-    const { users } = require("./data/users.json");
-    const user = users.find(
-      (u) => u.name == username && u.schoolCode === school.code
-    );
-    if (school && user) {
-      return res.json({
-        success: true,
-        message: "Login successful",
-        user,
-      });
-    }
-    return res.status(400).json({
-      error: "Invalid school code or username",
-    });
-  } catch (error) {
-    console.log("Login error: ", error);
-    res.status(500).json({ error: "Login failed" });
-  }
-});
-
-
-
-app.get("/api/videos/:filename(*)", async (req, res) => {
-  const { filename } = req.params;
-
-  console.log("proxy video request:", filename);
-  try {
-    const s3Object = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: filename,
-      })
-    );
-
-    // כותרות פשוטות – בלי Range
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader("Accept-Ranges", "none");
-
-    // סטרימינג מהשרת ללקוח
-    s3Object.Body.pipe(res);
-  } catch (err) {
-    console.error("video proxy error:", err);
-
-    // אם נטפרי חסם – שליחת iframe שמחקה את דף החסימה
-    if (err?.$metadata?.httpStatusCode === 418 && err?.body?.iframe?.src) {
-      const iframeSrc = err.body.iframe.src;
-      res.status(418).send(`
-        <!DOCTYPE html>
-        <html lang="he" dir="rtl">
-        <head>
-          <meta charset="UTF-8">
-          <title>וידאו חסום</title>
-          <style>
-            body, html { margin:0; padding:0; height:100%; }
-            iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
-          </style>
-        </head>
-        <body>
-          <iframe src="${iframeSrc}" id="netfree_block_iframe" name="netfree-block-iframe"></iframe>
-        </body>
-        </html>
-      `);
-      return;
-    }
-
-    res.status(500).send("Failed to load video");
-  }
-});
 
 
 // 📧 שליחת משוב למנהל המערכת
@@ -358,14 +469,14 @@ app.post("/api/send-feedback", async (req, res) => {
   try {
     // בדיקת שדות חובה
     if (!userName || !subject || !message) {
-      return res.status(400).json({ 
-        error: "יש למלא את כל השדות החובה" 
+      return res.status(400).json({
+        error: "יש למלא את כל השדות החובה"
       });
     }
 
     // בדירוג אם יש כתובת מנהל במשתנים הסביבה
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-    
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: adminEmail,
@@ -416,15 +527,15 @@ app.post("/api/send-feedback", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.json({ 
-      success: true, 
-      message: "ההודעה נשלחה בהצלחה למנהל המערכת" 
+    res.json({
+      success: true,
+      message: "ההודעה נשלחה בהצלחה למנהל המערכת"
     });
-    
+
   } catch (error) {
     console.error("Feedback email error:", error);
-    res.status(500).json({ 
-      error: "שגיאה בשליחת המשוב" 
+    res.status(500).json({
+      error: "שגיאה בשליחת המשוב"
     });
   }
 });

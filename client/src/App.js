@@ -22,16 +22,29 @@ const API_URL = process.env.REACT_APP_API_URL;
 const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
 
 // const API_URL = "https://autodidact.co.il";
+let accessToken = "";
 
 const apiService = {
+  // פונקציה שנקרא לה אחרי התחברות כדי לשמור את ה־token
+  setToken: (token) => {
+    accessToken = token;
+  },
   getUsers: async () => {
-    const res = await fetch(`${API_URL}/api/users`);
+    const res = await fetch(`${API_URL}/api/users`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      }
+    });
     return res.json();
   },
 
   getCourses: async () => {
     try {
-      const res = await fetch(`${API_URL}/api/courses`);
+      const res = await fetch(`${API_URL}/api/courses`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        }
+      });
       return res.json();
     } catch (e) {
       throw e;
@@ -44,15 +57,10 @@ const apiService = {
     return data;
   },
 
-  getUsers: async () => {
-    const res = await fetch(`${API_URL}/api/users`);
-    const data = await res.json();
-    return data;
-  },
-
   login: async (schoolCode, username) => {
     const res = await fetch(`${API_URL}/api/login`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ schoolCode, username }),
     });
@@ -64,7 +72,10 @@ const apiService = {
   checkAssignment: async (code, assignment, studentName, studentEmail) => {
     const res = await fetch(`${API_URL}/api/check-assignment`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({ code, assignment, studentName, studentEmail }),
     });
     if (!res.ok) throw new Error("Failed to check assignment");
@@ -72,7 +83,11 @@ const apiService = {
   },
   getStatistic: async (userId, courseId) => {
     const res = await fetch(
-      `${API_URL}/api/users/${userId}/courses/${courseId}`
+      `${API_URL}/api/users/${userId}/courses/${courseId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
     );
     return res.json();
   },
@@ -87,7 +102,10 @@ const apiService = {
   ) => {
     const res = await fetch(`${API_URL}/api/submit-assignment`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         studentName,
         studentEmail,
@@ -105,7 +123,10 @@ const apiService = {
   saveMark: async (studentId, courseId, chapterId, grade, feedback) => {
     const res = await fetch(`${API_URL}/api/save-mark`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         studentId,
         courseId,
@@ -117,10 +138,14 @@ const apiService = {
     if (!res.ok) throw new Error("failed to save mark");
     return res.json();
   },
+
   checkIfSubmitted: async (userId, courseId, chapterId) => {
     const res = await fetch(`${API_URL}/api/check-submission`, {
       method: "POST",
-      headers: { "content-Type": "application/json" },
+      headers: {
+        "content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         userId,
         courseId,
@@ -130,6 +155,20 @@ const apiService = {
     if (!res.ok) throw new Error("failed to check subbmition");
     return res.json();
   },
+  logout: async () => {
+    try {
+      const result = await fetch(`${API_URL}/api/logout`, {
+        method: "POST",
+        credentials: "include"
+      })
+
+      if (!result.ok) console.log("logout failed");
+
+      return result.ok;
+    } catch (error) {
+      console.log(error);
+    }
+  }
 };
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
@@ -182,13 +221,14 @@ const LoginPage = ({ onLogin, loading }) => {
 
     try {
       const { ok, data } = await apiService.login(schoolCode, userName.trim());
+      console.log('data from login: ', data)
 
       if (!ok) {
         setError(data.error || "שגיאה בהתחברות");
         return;
       }
       // שולחים את ה-user שהגיע מהשרת ל-App
-      onLogin(data.user);
+      onLogin(data.user, data.accessToken);
     } catch (err) {
       console.error(err);
       setError("תקלה בשרת");
@@ -469,14 +509,14 @@ const CoursePage = ({
             <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 relative">
               <h2 className="text-2xl font-bold mb-4">הנחיות עבודה</h2>
               <div className="max-h-96 overflow-y-auto">
-                 <div className="max-h-96 overflow-y-auto space-y-4">
-                {course.instructions.map((ins, idx) => (
-                  <div key={idx}>
-                    <h3 className="text-xl font-semibold mb-1">{ins.section}</h3>
-                    <p className="text-gray-700 whitespace-pre-wrap">{ins.content}</p>
-                  </div>
-                ))}
-              </div>
+                <div className="max-h-96 overflow-y-auto space-y-4">
+                  {course.instructions.map((ins, idx) => (
+                    <div key={idx}>
+                      <h3 className="text-xl font-semibold mb-1">{ins.section}</h3>
+                      <p className="text-gray-700 whitespace-pre-wrap">{ins.content}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
               <button
                 onClick={() => setShowInstructions(false)}
@@ -821,7 +861,7 @@ const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
           }}
         >
           <source
-            // src={`${REACT_APP_VIDEOS_URL}/${filename}`}
+            src={`${REACT_APP_VIDEOS_URL}/${filename}`}
             type="video/mp4"
           />
           Your browser does not support the video tag.
@@ -861,8 +901,8 @@ const MarksPage = ({ user, course, onBack }) => {
             mark?.grade >= 85
               ? "text-green-600"
               : mark?.grade >= 60
-              ? "text-yellow-600"
-              : "text-red-600";
+                ? "text-yellow-600"
+                : "text-red-600";
 
           return (
             <div
@@ -1140,9 +1180,13 @@ export default function App() {
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState("");
 
   // redirect to the login page
-  const handleLogOut = () => {
+  const handleLogOut = async () => {
+    const res = await apiService.logout()
+    console.log('logout by jwt sucsessed ? ', res);
+    setAccessToken(null)
     setCurrentPage("login");
   };
 
@@ -1155,11 +1199,14 @@ export default function App() {
         console.error("Error fetching courses:", err);
       }
     };
+    if (!accessToken) return;
     fetchCourses();
-  }, []);
+  }, [accessToken]);
 
-  const handleLogin = (user) => {
+  const handleLogin = (user, token) => {
+    apiService.setToken(token);
     setCurrentUser(user);
+    setAccessToken(token);
     setCurrentPage("dashboard");
   };
 
