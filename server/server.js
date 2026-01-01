@@ -8,6 +8,8 @@ const fs = require("fs").promises;
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken")
+const { googleAuth } = require("./auth/googleAuth")
+const { createAccessToken, createRefreshToken } = require("./auth/tokenUnits");
 
 require("dotenv").config();
 
@@ -18,6 +20,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// הפרמטר הראשון הוא בסיס של ה - url , הוא יוסיף את הפרמטר הראשון לניתוב
+app.use("/auth", googleAuth);
+
 app.use((req, res, next) => {
   res.header("Cross-Origin-Resource-Policy", "cross-origin");
   next();
@@ -25,14 +30,6 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
-
-
-
-// בנתיב /me מוחזר אובייקט JSON עם userId של המשתמש המחובר.
-app.get("/me", (req, res) => {
-  res.json({ userId: req.userId });
-});
-
 
 // הגדרות S3
 const s3 = new S3Client({
@@ -59,24 +56,6 @@ app.post("/api/logout", async (req, res) => {
   });
   res.json({ ok: true });
 })
-
-// פונקציה שיוצרת Access Token (טוקן קצר טווח)
-function createAccessToken(user) {
-  return jwt.sign(
-    { userId: user.id, userName: user.name },
-    process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: '15m'
-  });
-}
-
-// פונקציה שיוצרת Refresh Token (טוקן ארוך טווח)
-function createRefreshToken(user) {
-  return jwt.sign(
-    { userId: user.id, userName: user.name },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "1d" }
-  )
-}
 
 // בדיקה אם המשתמש הגיש כבר מטלה 
 app.post("/api/check-submission", async (req, res) => {
@@ -168,7 +147,7 @@ app.post("/api/login", (req, res) => {
     // יוצר cookie ושולח  את זה לדפדפן 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, 
+      secure: false,
       sameSite: "lax",
       path: "/api/refresh"
     })
@@ -193,6 +172,7 @@ app.post("/api/refresh", (req, res) => {
   // אם אין שום טוקן - המשתמש לא מורשה 
   if (!token) return res.status(401).json({ message: "No refresh token" });
 
+
   let payload;
   try {
     // בדיקה שהטוקן תקין
@@ -202,6 +182,11 @@ app.post("/api/refresh", (req, res) => {
     // אם יש שגיאה כלשהי → מחזירים 401 (Unauthorized)
     return res.status(401).json({ message: "Unauthorized" });
   }
+
+  if (payload.googleOnly) {
+    return res.status(401).json({ message: "google user not registered" });
+  }
+
   const user = { id: payload.userId, name: payload.userName };
   const newAcess = createAccessToken(user);
   const newRefresh = createRefreshToken(user);
@@ -225,6 +210,30 @@ app.get("/api/schools", (req, res) => {
   }
 });
 
+app.get("/api/me", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(401).json({ message: "unauthorized" });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    console.log(`endPoint: /api/me, payload: ${payload}`);
+    const userId = payload.userId;
+    const userName = payload.userName;
+    const users = require('./data/users.json').users;
+    const user = users.find(user => user.id === userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found" })
+      return;
+    }
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ message: "Invalid Token" })
+  }
+})
+
 // Global middleware that checks JWT for every incoming request
 
 app.use((req, res, next) => {
@@ -240,10 +249,10 @@ app.use((req, res, next) => {
   try {
     // אימות הטוקן מול המפתח הסודי
     const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-    // שמירת מזהה המשתמש בבקשה לשימוש בהמשך
     req.userId = payload.userId;
     req.userName = payload.userName;
+    console.log("payload.userId: " + payload.userId);
+    console.log("payload.userName: " + payload.userName);
     next();
   } catch (err) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -292,7 +301,6 @@ const writeLogMiddlware = async (req, res, next) => {
     return res.status(500).json({ message: "Error writing log" });
   }
 };
-
 
 // הפונקציה מחזירה אובייקט שמכיל 3 שדות:
 // 1 - כמה פרקים הושלמו

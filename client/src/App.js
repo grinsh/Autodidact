@@ -16,6 +16,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import "./App.css";
+import axios from "axios";
+
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
@@ -121,9 +123,8 @@ const apiService = {
   },
 
   login: async (schoolCode, username) => {
-    const res = await apiService.fetchWithAuth(`${API_URL}/api/login`, {
+    const res = await fetch(`${API_URL}/api/login`, {
       method: "POST",
-       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ schoolCode, username }),
     });
@@ -230,6 +231,41 @@ const apiService = {
     }
   }
 };
+
+const LoginWithGoogle = () => {
+  const loginWithGoogle = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/auth/google/url");
+      window.location.href = res.data.url;
+    } catch (err) {
+      console.error("שגיאה בחיבור לגוגל")
+    }
+  }
+  return (
+    <div className="mt-4">
+      <button
+        onClick={loginWithGoogle}
+        className="
+          w-full
+          flex items-center justify-center gap-3
+          bg-white border border-gray-300
+          text-gray-700 font-semibold
+          py-3 rounded-lg shadow-sm
+          hover:shadow-md hover:scale-105
+          transition-all duration-300
+        "
+      >
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          className="w-5 h-5"
+        />
+        התחברי עם Google
+      </button>
+    </div>
+  );
+}
+
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
 const LoginPage = ({ onLogin, loading }) => {
@@ -364,6 +400,9 @@ const LoginPage = ({ onLogin, loading }) => {
         >
           התחברות
         </button>
+        {/* התחברות עם גוגל */}
+        <LoginWithGoogle />
+
       </div>
     </div>
   );
@@ -371,8 +410,10 @@ const LoginPage = ({ onLogin, loading }) => {
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
-  const userCourses = courses.filter((c) => user.courses.includes(c.id));
-
+  const userCourses = courses.filter((c) => user?.courses?.includes(c.id));
+  if (!userCourses) {
+    console.log("there are no courses available for this student...")
+  }
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
       <div className="max-w-6xl mx-auto">
@@ -1232,6 +1273,57 @@ const LogOutButtonWithFeedback = ({ onLogOut, user, course, chapter }) => {
   );
 };
 
+//  שהוא  הודעה למשתמש שהוא לא רשום במקרה שהוא מנסה להתחבר עם גוגל אבל לא רשום
+
+const NotRegisteredPage = ({ onBackToLogin }) => {
+  return (
+    <div
+      className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4"
+      dir="rtl"
+    >
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+        {/* כותרת */}
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          אינך רשום במערכת
+        </h1>
+
+        {/* טקסט */}
+        <p className="text-gray-600 mb-8 leading-relaxed">
+          ההתחברות באמצעות Google בוצעה בהצלחה,
+          <br />
+          אך לא נמצא משתמש תואם במערכת.
+          <br />
+          <br />
+          אם את/ה סבורה שמדובר בטעות,
+          <br />
+          אנא פנה/י למנהלת המערכת.
+        </p>
+
+        {/* כפתור */}
+        <button
+          onClick={onBackToLogin}
+          className="
+            w-full
+            bg-gradient-to-r from-purple-500 to-blue-500
+            text-white
+            py-3
+            rounded-lg
+            font-semibold
+            hover:from-purple-600 hover:to-blue-600
+            hover:scale-105
+            transition-all
+          "
+        >
+          חזרה למסך התחברות
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+
+
 // 🎯 App הראשי
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -1241,6 +1333,7 @@ export default function App() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [accessToken, setAccessToken] = useState("");
+  const [googleAuthChecked, setGoogleAuthChecked] = useState(false)
 
   // redirect to the login page
   const handleLogOut = async () => {
@@ -1249,6 +1342,61 @@ export default function App() {
     setAccessToken(null)
     setCurrentPage("login");
   };
+
+  //login with AOuth (not need display - only login logic)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    // אין Google OAuth → ממשיכים כרגיל
+    if (!params.get("googleLogin")) {
+      setGoogleAuthChecked(true);
+      return;
+    }
+
+    const run = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          setCurrentPage("NotRegisteredPage");
+          setGoogleAuthChecked(true);
+          return;
+        }
+
+        const data = await res.json();
+        apiService.setToken(data.accessToken);
+        setAccessToken(data.accessToken);
+
+        const userRes = await fetch(`${API_URL}/api/me`, {
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        });
+
+        if (userRes.status === 401 || userRes.status === 404) {
+          setCurrentPage("NotRegisteredPage");
+          setGoogleAuthChecked(true);
+          return;
+        }
+
+        const user = await userRes.json();
+        setCurrentUser(user);
+        setCurrentPage("dashboard");
+        setGoogleAuthChecked(true);
+
+      } catch (e) {
+        console.error(e);
+        setGoogleAuthChecked(true);
+      }
+    };
+
+    run();
+  }, []);
+
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -1265,12 +1413,11 @@ export default function App() {
 
   useEffect(() => {
     apiService.setTokenUdapter(setAccessToken);
-  })
+  }, [])
 
   const handleLogin = (user, token) => {
     apiService.setToken(token);
     setCurrentUser(user);
-    setAccessToken(token);
     setCurrentPage("dashboard");
   };
 
@@ -1303,6 +1450,13 @@ export default function App() {
   const handleSelectChapterWithoutVideos = () => {
     setCurrentPage("MessagePageChapter");
   };
+
+  const hasGoogleLogin =
+    new URLSearchParams(window.location.search).get("googleLogin");
+
+  if (hasGoogleLogin && !googleAuthChecked) {
+    return <div>בודקת התחברות עם Google…</div>;
+  }
 
   return (
     <div>
@@ -1354,6 +1508,12 @@ export default function App() {
       {currentPage === "MessagePageChapter" && (
         <MessagePageChapter onBack={handleBack} />
       )}
+      {currentPage === "NotRegisteredPage" && (
+        <NotRegisteredPage onBackToLogin={() => { setCurrentPage("login") }}
+        />
+      )
+
+      }
     </div>
   );
 }
