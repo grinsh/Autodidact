@@ -49,7 +49,6 @@ router.get("/google/callback", async (req, res) => {
         return res.redirect("http://localhost:3000?googleLogin=true");
     }
 
-    const accessToken = createAccessToken(user);
     const refreshToken = createRefreshToken(user);
 
     res.cookie("refreshToken", refreshToken, {
@@ -60,7 +59,7 @@ router.get("/google/callback", async (req, res) => {
     });
 
     res.redirect("http://localhost:3000?googleLogin=true");
-    
+
 })
 
 
