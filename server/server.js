@@ -6,26 +6,30 @@ const nodemailer = require("nodemailer");
 const { error } = require("console");
 const fs = require("fs").promises;
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken")
+const { googleAuth } = require("./auth/googleAuth")
+const { createAccessToken, createRefreshToken } = require("./auth/tokenUnits");
 
 require("dotenv").config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
+
+// הפרמטר הראשון הוא בסיס של ה - url , הוא יוסיף את הפרמטר הראשון לניתוב
+app.use("/auth", googleAuth);
 
 app.use((req, res, next) => {
   res.header("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
-app.use(express.json());
 
-// Middleware פשוט לבדיקה (לדוגמה)
-app.use((req, res, next) => {
-  // כאן אפשר לבדוק JWT או סשן משתמש
-  const authorized = true; // לשם הדגמה
-  if (!authorized) return res.status(403).send("Forbidden");
-  next();
-});
+app.use(express.json());
+app.use(cookieParser());
 
 // הגדרות S3
 const s3 = new S3Client({
@@ -40,6 +44,263 @@ const BUCKET_NAME = "myawsbucketgrinsh";
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+//logout 
+app.post("/api/logout", async (req, res) => {
+  res.cookie("refreshToken", "", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    expires: new Date(0),
+    path: "/api/refresh"
+  });
+  res.json({ ok: true });
+})
+
+// בדיקה אם המשתמש הגיש כבר מטלה 
+app.post("/api/check-submission", async (req, res) => {
+  console.log(' בדיקה אם המשתמש הגיש כבר מטלה ');
+  const { userId, courseId, chapterId } = req.body;
+  const users = require('./data/users.json').users;
+  const user = users.find(u => u.id === Number(userId))
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  const isExistMark = user.marks.find(mark => mark.courseId === Number(courseId) &&
+    mark.chapterId === Number(chapterId))
+  if (isExistMark)
+    res.send({ isSubmitted: true })
+  else
+    res.send({ isSubmitted: false })
+})
+
+app.get("/api/videos/:filename(*)", async (req, res) => {
+  const { filename } = req.params;
+
+  console.log("proxy video request:", filename);
+  try {
+    const s3Object = await s3.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: filename,
+      })
+    );
+
+    // כותרות פשוטות – בלי Range
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Accept-Ranges", "none");
+
+    // סטרימינג מהשרת ללקוח
+    s3Object.Body.pipe(res);
+  } catch (err) {
+    console.error("video proxy error:", err);
+
+    // אם נטפרי חסם – שליחת iframe שמחקה את דף החסימה
+    if (err?.$metadata?.httpStatusCode === 418 && err?.body?.iframe?.src) {
+      const iframeSrc = err.body.iframe.src;
+      res.status(418).send(`
+        <!DOCTYPE html>
+        <html lang="he" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>וידאו חסום</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; }
+            iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${iframeSrc}" id="netfree_block_iframe" name="netfree-block-iframe"></iframe>
+        </body>
+        </html>
+      `);
+      return;
+    }
+
+    res.status(500).send("Failed to load video");
+  }
+});
+
+// 🔑 התחברות לפי קוד בית ספר ושם משתמש
+app.post("/api/login", (req, res) => {
+  const { schoolCode, username } = req.body;
+  try {
+    const schools = require("./data/schools.json");
+    const school = schools.find((s) => s.code === schoolCode);
+    if (!school) {
+      return res.status(400).json({ error: "קוד בית ספר לא תקין" });
+    }
+    const { users } = require("./data/users.json");
+    const user = users.find(
+      (u) => u.name == username && u.schoolCode === school.code
+    );
+    if (!user) {
+      const userWithWrongSchool = users.find(u => u.name === username)
+      if (userWithWrongSchool) {
+        return res.status(400).json({ error: "קוד סמינר שגוי" });
+      }
+      return res.status(400).json({ error: "משתמש לא קיים במערכת" })
+    }
+    const accessToken = createAccessToken(user);
+    const refreshToken = createRefreshToken(user);
+
+    // יוצר cookie ושולח  את זה לדפדפן 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/api/refresh"
+    })
+
+    return res.json({
+      accessToken,
+      success: true,
+      message: "Login successful",
+      user,
+    });
+
+  } catch (error) {
+    console.log("Login error: ", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// ריענון טוקנים 
+app.post("/api/refresh", (req, res) => {
+  // מחלץ את הטוקן refreshtoken 
+  const token = req.cookies.refreshToken;
+  // אם אין שום טוקן - המשתמש לא מורשה 
+  if (!token) return res.status(401).json({ message: "No refresh token" });
+
+
+  let payload;
+  try {
+    // בדיקה שהטוקן תקין
+    payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
+  }
+  catch {
+    // אם יש שגיאה כלשהי → מחזירים 401 (Unauthorized)
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (payload.googleOnly) {
+    return res.status(401).json({ message: "google user not registered" });
+  }
+
+  const user = { id: payload.userId, name: payload.userName };
+  const newAcess = createAccessToken(user);
+  const newRefresh = createRefreshToken(user);
+
+  res.cookie("refreshToken", newRefresh, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/api/refresh"
+  })
+  res.json({ accessToken: newAcess });
+})
+
+// 📚 קבלת רשימת סמינרים
+app.get("/api/schools", (req, res) => {
+  try {
+    const schools = require("./data/schools.json");
+    res.json(schools);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch schools" });
+  }
+});
+
+app.get("/api/me", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(401).json({ message: "unauthorized" });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    console.log(`endPoint: /api/me, payload: ${payload}`);
+    const userId = payload.userId;
+    const userName = payload.userName;
+    const users = require('./data/users.json').users;
+    const user = users.find(user => user.id === userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found" })
+      return;
+    }
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ message: "Invalid Token" })
+  }
+})
+
+// Global middleware that checks JWT for every incoming request
+
+app.use((req, res, next) => {
+
+  // לוקחים את כותרת Authorization מהבקשה
+  const authHeader = req.headers["authorization"];
+
+  // אם אין טוקן – מחזירים 401 (אין הרשאה)
+  if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
+
+  // מוציאים את הטוקן (בפורמט Bearer <token>)
+  const token = authHeader.split(" ")[1];
+  try {
+    // אימות הטוקן מול המפתח הסודי
+    const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.userId = payload.userId;
+    req.userName = payload.userName;
+    console.log("payload.userId: " + payload.userId);
+    console.log("payload.userName: " + payload.userName);
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+});
+
+// middleware that write to logs file before important request
+
+const writeLogMiddlware = async (req, res, next) => {
+  console.log("in the middleWare writeLogMiddlware");
+
+  // הגנה בתוך אותו request
+  if (req.hasLogged) return next();
+  req.hasLogged = true;
+
+  try {
+    const userName = req.userName;
+    const endPoint = req.originalUrl;
+    const filePath = path.join(__dirname, "data", "logs.json");
+
+    const fileData = await fs.readFile(filePath, "utf-8");
+    const json = JSON.parse(fileData);
+    const logs = json.logs || [];
+
+    // הגנה מפני כפילויות בין בקשות קרובות בזמן
+    const alreadyLogged = logs.some(
+      log =>
+        log.userName === userName &&
+        log.endPoint === endPoint &&
+        new Date() - new Date(log.date) < 5000 // פחות מ־5 שניות
+    );
+
+    if (!alreadyLogged) {
+      logs.push({
+        userName,
+        date: new Date().toISOString(),
+        endPoint
+      });
+
+      await fs.writeFile(filePath, JSON.stringify({ logs }, null, 2));
+    }
+
+    next();
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error writing log" });
+  }
+};
 
 // הפונקציה מחזירה אובייקט שמכיל 3 שדות:
 // 1 - כמה פרקים הושלמו
@@ -86,8 +347,6 @@ app.get('/api/users/:userId/courses/:courseId', async (req, res) => {
   }
 })
 
-
-
 // ✉️ הגדרת nodemailer
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -101,7 +360,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // שמירת הציון בקובץ users.json
-app.post("/api/save-mark", async (req, res) => {
+app.post("/api/save-mark", writeLogMiddlware, async (req, res) => {
   const { studentId, courseId, chapterId, grade, feedback } = req.body;
 
   try {
@@ -109,7 +368,6 @@ app.post("/api/save-mark", async (req, res) => {
     const fileData = await fs.readFile(filePath, "utf-8");
     const usersData = JSON.parse(fileData);
     const date = new Date();
-    console.log('filePath', filePath);
 
     const user = usersData.users.find((u) => u.id === Number(studentId));
     if (!user) {
@@ -132,25 +390,9 @@ app.post("/api/save-mark", async (req, res) => {
   }
 });
 
-// בדיקה אם המשתמש הגיש כבר מטלה 
-app.post("/api/check-submission", async (req, res) => {
-  console.log(' בדיקה אם המשתמש הגיש כבר מטלה ');
-  const { userId, courseId, chapterId } = req.body;
-  const users = require('./data/users.json').users;
-  const user = users.find(u => u.id === Number(userId))
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
-  const isExistMark = user.marks.find(mark => mark.courseId === Number(courseId) &&
-    mark.chapterId === Number(chapterId))
-  if (isExistMark)
-    res.send({ isSubmitted: true })
-  else
-    res.send({ isSubmitted: false })
-})
 
 // 📌 בדיקת קוד עם OpenAI
-app.post("/api/check-assignment", async (req, res) => {
+app.post("/api/check-assignment", writeLogMiddlware, async (req, res) => {
   const { code, assignment, studentName, studentEmail } = req.body;
 
   try {
@@ -162,6 +404,10 @@ app.post("/api/check-assignment", async (req, res) => {
 \`\`\`
 ${code}
 \`\`\`
+
+עליך להחזיר **אך ורק JSON תקין**, ללא שום טקסט נוסף לפניו או אחריו.
+אם אינך יכול להחזיר JSON תקין — החזר בדיוק את זה: {"error": "Invalid format"}.
+
 
 בדוק את הקוד וחזור בתשובה בפורמט JSON (בעברית) עם השדות הבאים:
 1. "completion_percentage" - אחוז השלמת המטלה (0-100)
@@ -178,8 +424,30 @@ ${code}
       temperature: 0.7,
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    // remove markdown 
+    let raw = response.choices[0].message.content;
+    if (raw.startsWith("```")) {
+      raw = raw.replace(/```json|```/g, "").trim();
+    }
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("❌ לא נמצא JSON תקין בתגובה:", raw);
+      return res.status(500).json({ error: "ה-AI לא החזיר JSON תקין", raw });
+    }
+
+    const cleanJson = jsonMatch[0]; // רק התוכן שבין { ... }
+
+
+    let result;
+    try {
+      result = JSON.parse(cleanJson);
+    }
+    catch (err) {
+      console.error("❌ JSON.parse נכשל. תוכן גולמי:", cleanJson);
+      return res.status(500).json({ error: "ה-AI החזיר JSON לא תקין", raw });
+    }
     res.json(result);
+
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Failed to check assignment" });
@@ -187,7 +455,7 @@ ${code}
 });
 
 // 📧 שליחת מייל עם הציון הסופי
-app.post("/api/submit-assignment", async (req, res) => {
+app.post("/api/submit-assignment", writeLogMiddlware, async (req, res) => {
   const {
     studentName,
     studentEmail,
@@ -251,15 +519,7 @@ app.get("/api/courses", (req, res) => {
   }
 });
 
-// 📚 קבלת רשימת סמינרים
-app.get("/api/schools", (req, res) => {
-  try {
-    const schools = require("./data/schools.json");
-    res.json(schools);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch schools" });
-  }
-});
+
 
 // 📚 קבלת תלמידים לפי סמינר
 app.get("/api/school/:schoolId/students", (req, res) => {
@@ -382,14 +642,14 @@ app.post("/api/send-feedback", async (req, res) => {
   try {
     // בדיקת שדות חובה
     if (!userName || !subject || !message) {
-      return res.status(400).json({ 
-        error: "יש למלא את כל השדות החובה" 
+      return res.status(400).json({
+        error: "יש למלא את כל השדות החובה"
       });
     }
 
     // בדירוג אם יש כתובת מנהל במשתנים הסביבה
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-    
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: adminEmail,
@@ -440,15 +700,15 @@ app.post("/api/send-feedback", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    res.json({ 
-      success: true, 
-      message: "ההודעה נשלחה בהצלחה למנהל המערכת" 
+    res.json({
+      success: true,
+      message: "ההודעה נשלחה בהצלחה למנהל המערכת"
     });
-    
+
   } catch (error) {
     console.error("Feedback email error:", error);
-    res.status(500).json({ 
-      error: "שגיאה בשליחת המשוב" 
+    res.status(500).json({
+      error: "שגיאה בשליחת המשוב"
     });
   }
 });

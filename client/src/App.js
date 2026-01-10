@@ -16,22 +16,100 @@ import {
   AlertCircle,
 } from "lucide-react";
 import "./App.css";
+import axios from "axios";
+
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
 const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
 
 // const API_URL = "https://autodidact.co.il";
+let accessToken = "";
+
+// משתנה ששומר למעשה מצביע לפונקציה setAccessToken של הסטייט שב - App 
+let updateTokenInApp = null;
 
 const apiService = {
+
+  fetchWithAuth: async (url, options = {}) => {
+    let res = await fetch(url, {
+      ...options,
+      credentials: "include",
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${accessToken.trim()}`,
+      }
+    });
+
+    // אם קיבלנו 401 → ננסה לרענן את ה-token
+    if (res.status == 401) {
+      try {
+        const newToken = await apiService.refreshToken();
+        if (!newToken) {
+          throw new Error("Unauthorized - login required");
+        }
+        console.log(" ריענון טוקן הצליח, מנסה שוב את הבקשה...");
+
+        res = await fetch(url, {
+          ...options,
+          credentials: "include",
+          headers: {
+            ...(options.headers || {}),
+            Authorization: `Bearer ${newToken}`,
+          },
+        });
+        if (res.status === 401) {
+          console.error("🚫 עדיין Unauthorized גם אחרי ריענון — מנתק את המשתמש");
+          throw new Error("Unauthorized after refresh");
+        }
+
+      } catch (err) {
+        console.error("Automatic refresh failed, user must log in again");
+        throw err;
+      }
+    }
+    console.log(`✅ fetchWithAuth סיים בהצלחה (${res.status})`);
+    return res;
+  },
+
+  refreshToken: async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/refresh`, {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (!res.ok) throw new Error("Failed to refresh token");
+      const data = await res.json();
+      accessToken = data.accessToken;
+      // השמה ל - state ב - React את הטוקן המעודכן
+      if (updateTokenInApp)
+        updateTokenInApp(accessToken);
+      return accessToken;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  },
+  // פונקציה שנקרא לה אחרי התחברות כדי לשמור את ה־token
+  setToken: (token) => {
+    accessToken = token;
+    if (updateTokenInApp)
+      updateTokenInApp(token);
+  },
+
+  setTokenUdapter: (fn) => {
+    updateTokenInApp = fn;
+  }
+  ,
   getUsers: async () => {
-    const res = await fetch(`${API_URL}/api/users`);
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/users`)
     return res.json();
   },
 
   getCourses: async () => {
     try {
-      const res = await fetch(`${API_URL}/api/courses`);
+      const res = await apiService.fetchWithAuth(`${API_URL}/api/courses`);
       return res.json();
     } catch (e) {
       throw e;
@@ -39,13 +117,7 @@ const apiService = {
   },
 
   getSchools: async () => {
-    const res = await fetch(`${API_URL}/api/schools`);
-    const data = await res.json();
-    return data;
-  },
-
-  getUsers: async () => {
-    const res = await fetch(`${API_URL}/api/users`);
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/schools`);
     const data = await res.json();
     return data;
   },
@@ -62,20 +134,23 @@ const apiService = {
   },
 
   checkAssignment: async (code, assignment, studentName, studentEmail) => {
-    const res = await fetch(`${API_URL}/api/check-assignment`, {
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/check-assignment`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({ code, assignment, studentName, studentEmail }),
     });
     if (!res.ok) throw new Error("Failed to check assignment");
     return res.json();
   },
+
   getStatistic: async (userId, courseId) => {
-    const res = await fetch(
-      `${API_URL}/api/users/${userId}/courses/${courseId}`
-    );
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/users/${userId}/courses/${courseId}`);
     return res.json();
   },
+
   // call to the function in the server that send email with the final mark
   submitAssignment: async (
     studentName,
@@ -85,9 +160,12 @@ const apiService = {
     grade,
     feedback
   ) => {
-    const res = await fetch(`${API_URL}/api/submit-assignment`, {
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/submit-assignment`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         studentName,
         studentEmail,
@@ -103,9 +181,12 @@ const apiService = {
 
   // call the function in server that write the mark in the file .
   saveMark: async (studentId, courseId, chapterId, grade, feedback) => {
-    const res = await fetch(`${API_URL}/api/save-mark`, {
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/save-mark`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         studentId,
         courseId,
@@ -117,10 +198,14 @@ const apiService = {
     if (!res.ok) throw new Error("failed to save mark");
     return res.json();
   },
+
   checkIfSubmitted: async (userId, courseId, chapterId) => {
-    const res = await fetch(`${API_URL}/api/check-submission`, {
+    const res = await apiService.fetchWithAuth(`${API_URL}/api/check-submission`, {
       method: "POST",
-      headers: { "content-Type": "application/json" },
+      headers: {
+        "content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         userId,
         courseId,
@@ -130,7 +215,57 @@ const apiService = {
     if (!res.ok) throw new Error("failed to check subbmition");
     return res.json();
   },
+
+  logout: async () => {
+    try {
+      const result = await apiService.fetchWithAuth(`${API_URL}/api/logout`, {
+        method: "POST",
+        credentials: "include"
+      })
+
+      if (!result.ok) console.log("logout failed");
+
+      return result.ok;
+    } catch (error) {
+      console.log(error);
+    }
+  }
 };
+
+const LoginWithGoogle = () => {
+  const loginWithGoogle = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/auth/google/url");
+      window.location.href = res.data.url;
+    } catch (err) {
+      console.error("שגיאה בחיבור לגוגל")
+    }
+  }
+  return (
+    <div className="mt-4">
+      <button
+        onClick={loginWithGoogle}
+        className="
+          w-full
+          flex items-center justify-center gap-3
+          bg-white border border-gray-300
+          text-gray-700 font-semibold
+          py-3 rounded-lg shadow-sm
+          hover:shadow-md hover:scale-105
+          transition-all duration-300
+        "
+      >
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          className="w-5 h-5"
+        />
+        התחברי עם Google
+      </button>
+    </div>
+  );
+}
+
 
 // 🎯 דף הכניסה החדש — בחירת בית ספר + שם משתמש + התחברות
 const LoginPage = ({ onLogin, loading }) => {
@@ -182,13 +317,14 @@ const LoginPage = ({ onLogin, loading }) => {
 
     try {
       const { ok, data } = await apiService.login(schoolCode, userName.trim());
+      console.log('data from login: ', data)
 
       if (!ok) {
         setError(data.error || "שגיאה בהתחברות");
         return;
       }
       // שולחים את ה-user שהגיע מהשרת ל-App
-      onLogin(data.user);
+      onLogin(data.user, data.accessToken);
     } catch (err) {
       console.error(err);
       setError("תקלה בשרת");
@@ -264,6 +400,9 @@ const LoginPage = ({ onLogin, loading }) => {
         >
           התחברות
         </button>
+        {/* התחברות עם גוגל */}
+        <LoginWithGoogle />
+
       </div>
     </div>
   );
@@ -271,8 +410,10 @@ const LoginPage = ({ onLogin, loading }) => {
 
 // 📚 דף הקורסים
 const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
-  const userCourses = courses.filter((c) => user.courses.includes(c.id));
-
+  const userCourses = courses.filter((c) => user?.courses?.includes(c.id));
+  if (!userCourses) {
+    console.log("there are no courses available for this student...")
+  }
   return (
     <div className="min-h-screen bg-gray-50 p-8" dir="rtl">
       <div className="max-w-6xl mx-auto">
@@ -469,14 +610,14 @@ const CoursePage = ({
             <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full p-6 relative">
               <h2 className="text-2xl font-bold mb-4">הנחיות עבודה</h2>
               <div className="max-h-96 overflow-y-auto">
-                 <div className="max-h-96 overflow-y-auto space-y-4">
-                {course.instructions.map((ins, idx) => (
-                  <div key={idx}>
-                    <h3 className="text-xl font-semibold mb-1">{ins.section}</h3>
-                    <p className="text-gray-700 whitespace-pre-wrap">{ins.content}</p>
-                  </div>
-                ))}
-              </div>
+                <div className="max-h-96 overflow-y-auto space-y-4">
+                  {course.instructions.map((ins, idx) => (
+                    <div key={idx}>
+                      <h3 className="text-xl font-semibold mb-1">{ins.section}</h3>
+                      <p className="text-gray-700 whitespace-pre-wrap">{ins.content}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
               <button
                 onClick={() => setShowInstructions(false)}
@@ -583,6 +724,7 @@ const ChapterPage = ({ user, chapter, course, onBack }) => {
         >
           ← חזרה ל{course.name}
         </button>
+
 
         <h1 className="text-4xl font-bold text-gray-800 mb-2">
           {chapter.title}
@@ -860,8 +1002,8 @@ const MarksPage = ({ user, course, onBack }) => {
             mark?.grade >= 85
               ? "text-green-600"
               : mark?.grade >= 60
-              ? "text-yellow-600"
-              : "text-red-600";
+                ? "text-yellow-600"
+                : "text-red-600";
 
           return (
             <div
@@ -1131,6 +1273,57 @@ const LogOutButtonWithFeedback = ({ onLogOut, user, course, chapter }) => {
   );
 };
 
+//  שהוא  הודעה למשתמש שהוא לא רשום במקרה שהוא מנסה להתחבר עם גוגל אבל לא רשום
+
+const NotRegisteredPage = ({ onBackToLogin }) => {
+  return (
+    <div
+      className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4"
+      dir="rtl"
+    >
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+        {/* כותרת */}
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          אינך רשום במערכת
+        </h1>
+
+        {/* טקסט */}
+        <p className="text-gray-600 mb-8 leading-relaxed">
+          ההתחברות באמצעות Google בוצעה בהצלחה,
+          <br />
+          אך לא נמצא משתמש תואם במערכת.
+          <br />
+          <br />
+          אם את/ה סבורה שמדובר בטעות,
+          <br />
+          אנא פנה/י למנהלת המערכת.
+        </p>
+
+        {/* כפתור */}
+        <button
+          onClick={onBackToLogin}
+          className="
+            w-full
+            bg-gradient-to-r from-purple-500 to-blue-500
+            text-white
+            py-3
+            rounded-lg
+            font-semibold
+            hover:from-purple-600 hover:to-blue-600
+            hover:scale-105
+            transition-all
+          "
+        >
+          חזרה למסך התחברות
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+
+
 // 🎯 App הראשי
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -1139,11 +1332,71 @@ export default function App() {
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState("");
+  const [googleAuthChecked, setGoogleAuthChecked] = useState(false)
 
   // redirect to the login page
-  const handleLogOut = () => {
+  const handleLogOut = async () => {
+    const res = await apiService.logout()
+    console.log('logout by jwt sucsessed ? ', res);
+    setAccessToken(null)
     setCurrentPage("login");
   };
+
+  //login with AOuth (not need display - only login logic)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    // אין Google OAuth → ממשיכים כרגיל
+    if (!params.get("googleLogin")) {
+      setGoogleAuthChecked(true);
+      return;
+    }
+
+    const run = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          setCurrentPage("NotRegisteredPage");
+          setGoogleAuthChecked(true);
+          return;
+        }
+
+        const data = await res.json();
+        apiService.setToken(data.accessToken);
+        setAccessToken(data.accessToken);
+
+        const userRes = await fetch(`${API_URL}/api/me`, {
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        });
+
+        if (userRes.status === 401 || userRes.status === 404) {
+          setCurrentPage("NotRegisteredPage");
+          setGoogleAuthChecked(true);
+          return;
+        }
+
+        const user = await userRes.json();
+        setCurrentUser(user);
+        setCurrentPage("dashboard");
+        setGoogleAuthChecked(true);
+
+      } catch (e) {
+        console.error(e);
+        setGoogleAuthChecked(true);
+      }
+    };
+
+    run();
+  }, []);
+
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -1154,10 +1407,16 @@ export default function App() {
         console.error("Error fetching courses:", err);
       }
     };
+    if (!accessToken) return;
     fetchCourses();
-  }, []);
+  }, [accessToken]);
 
-  const handleLogin = (user) => {
+  useEffect(() => {
+    apiService.setTokenUdapter(setAccessToken);
+  }, [])
+
+  const handleLogin = (user, token) => {
+    apiService.setToken(token);
     setCurrentUser(user);
     setCurrentPage("dashboard");
   };
@@ -1191,6 +1450,13 @@ export default function App() {
   const handleSelectChapterWithoutVideos = () => {
     setCurrentPage("MessagePageChapter");
   };
+
+  const hasGoogleLogin =
+    new URLSearchParams(window.location.search).get("googleLogin");
+
+  if (hasGoogleLogin && !googleAuthChecked) {
+    return <div>בודקת התחברות עם Google…</div>;
+  }
 
   return (
     <div>
@@ -1242,6 +1508,12 @@ export default function App() {
       {currentPage === "MessagePageChapter" && (
         <MessagePageChapter onBack={handleBack} />
       )}
+      {currentPage === "NotRegisteredPage" && (
+        <NotRegisteredPage onBackToLogin={() => { setCurrentPage("login") }}
+        />
+      )
+
+      }
     </div>
   );
 }

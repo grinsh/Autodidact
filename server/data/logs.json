@@ -1,0 +1,14 @@
+{
+  "logs": [
+    {
+      "userName": "שושי טעפ",
+      "date": "2025-12-30T08:13:34.474Z",
+      "endPoint": "/api/check-assignment"
+    },
+    {
+      "userName": "שושי טעפ",
+      "date": "2025-12-30T08:19:42.503Z",
+      "endPoint": "/api/check-assignment"
+    }
+  ]
+}
