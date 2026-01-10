@@ -315,16 +315,46 @@ app.get("/api/videos/:filename(*)", async (req, res) => {
       })
     );
 
-    // כותרות פשוטות – בלי Range
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader("Accept-Ranges", "none");
-
-    // סטרימינג מהשרת ללקוח
-    s3Object.Body.pipe(res);
+    // קבל גודל הקובץ מה-metadata
+    const contentLength = s3Object.ContentLength;
+    const contentType = s3Object.ContentType || "video/mp4";
+    
+    // בדיקה אם יש Range header (לדוגמה: bytes=0-1023)
+    const range = req.headers.range;
+    
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : contentLength - 1;
+      
+      // בדוק שערכים תקינים
+      if (start >= contentLength) {
+        res.status(416).send("Requested Range Not Satisfiable");
+        return;
+      }
+      
+      const chunkSize = (end - start) + 1;
+      
+      res.status(206); // Partial Content
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${contentLength}`);
+      res.setHeader("Content-Length", chunkSize);
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Accept-Ranges", "bytes");
+      
+      // שלח רק את החלק המבוקש מה-S3
+      s3Object.Body.pipe(res);
+    } else {
+      // בקשה רגילה - שלח את כל הקובץ
+      res.setHeader("Content-Length", contentLength);
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Accept-Ranges", "bytes");
+      
+      s3Object.Body.pipe(res);
+    }
+    
   } catch (err) {
     console.error("video proxy error:", err);
-
-    // אם נטפרי חסם – שליחת iframe שמחקה את דף החסימה
+    
     if (err?.$metadata?.httpStatusCode === 418 && err?.body?.iframe?.src) {
       const iframeSrc = err.body.iframe.src;
       res.status(418).send(`
@@ -333,24 +363,18 @@ app.get("/api/videos/:filename(*)", async (req, res) => {
         <head>
           <meta charset="UTF-8">
           <title>וידאו חסום</title>
-          <style>
-            body, html { margin:0; padding:0; height:100%; }
-            iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
-          </style>
         </head>
         <body>
-          <iframe src="${iframeSrc}" id="netfree_block_iframe" name="netfree-block-iframe"></iframe>
+          <iframe src="${iframeSrc}" id="netfree_block_iframe"></iframe>
         </body>
         </html>
       `);
       return;
     }
-
+    
     res.status(500).send("Failed to load video");
   }
 });
-
-
 // 📧 שליחת משוב למנהל המערכת
 app.post("/api/send-feedback", async (req, res) => {
   const { userName, schoolName, courseName, chapterName, subject, message } = req.body;
