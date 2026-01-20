@@ -10,8 +10,13 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken")
 const { googleAuth } = require("./auth/googleAuth")
 const { createAccessToken, createRefreshToken } = require("./auth/tokenUnits");
+const connectDB = require('./config/db')
+const UserModel = require('./models/UserModel');
+const userRoutes = require('./routes/userRoutes');
+const { getUserById } = require("./controllers/userController");
 
 require("dotenv").config();
+connectDB();
 
 const app = express();
 
@@ -30,6 +35,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
+app.use('/api/users', userRoutes);
 
 // הגדרות S3
 const s3 = new S3Client({
@@ -210,29 +216,47 @@ app.get("/api/schools", (req, res) => {
   }
 });
 
-app.get("/api/me", (req, res) => {
+app.get("/api/me", async (req, res) => { 
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     return res.status(401).json({ message: "unauthorized" });
   }
+
   const token = authHeader.split(" ")[1];
   try {
     const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    console.log(`endPoint: /api/me, payload: ${payload}`);
-    const userId = payload.userId;
-    const userName = payload.userName;
-    const users = require('./data/users.json').users;
-    const user = users.find(user => user.id === userId);
-    if (!user) {
-      res.status(404).json({ message: "User not found" })
-      return;
-    }
-    res.json(user);
+    req.params.id = payload.userId; 
+    await getUserById(req, res);    
   } catch (err) {
     console.error(err);
-    res.status(401).json({ message: "Invalid Token" })
+    res.status(401).json({ message: "Invalid Token" });
   }
-})
+});
+
+
+// app.get("/api/me", (req, res) => {
+//   const authHeader = req.headers["authorization"];
+//   if (!authHeader) {
+//     return res.status(401).json({ message: "unauthorized" });
+//   }
+//   const token = authHeader.split(" ")[1];
+//   try {
+//     const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+//     console.log(`endPoint: /api/me, payload: ${payload}`);
+//     const userId = payload.userId;
+//     const userName = payload.userName;
+//     const users = require('./data/users.json').users;
+//     const user = users.find(user => user.id === userId);
+//     if (!user) {
+//       res.status(404).json({ message: "User not found" })
+//       return;
+//     }
+//     res.json(user);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(401).json({ message: "Invalid Token" })
+//   }
+// })
 
 // Global middleware that checks JWT for every incoming request
 
@@ -578,29 +602,29 @@ app.get("/api/videos/:filename(*)", async (req, res) => {
     // קבל גודל הקובץ מה-metadata
     const contentLength = s3Object.ContentLength;
     const contentType = s3Object.ContentType || "video/mp4";
-    
+
     // בדיקה אם יש Range header (לדוגמה: bytes=0-1023)
     const range = req.headers.range;
-    
+
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
       const end = parts[1] ? parseInt(parts[1], 10) : contentLength - 1;
-      
+
       // בדוק שערכים תקינים
       if (start >= contentLength) {
         res.status(416).send("Requested Range Not Satisfiable");
         return;
       }
-      
+
       const chunkSize = (end - start) + 1;
-      
+
       res.status(206); // Partial Content
       res.setHeader("Content-Range", `bytes ${start}-${end}/${contentLength}`);
       res.setHeader("Content-Length", chunkSize);
       res.setHeader("Content-Type", contentType);
       res.setHeader("Accept-Ranges", "bytes");
-      
+
       // שלח רק את החלק המבוקש מה-S3
       s3Object.Body.pipe(res);
     } else {
@@ -608,13 +632,13 @@ app.get("/api/videos/:filename(*)", async (req, res) => {
       res.setHeader("Content-Length", contentLength);
       res.setHeader("Content-Type", contentType);
       res.setHeader("Accept-Ranges", "bytes");
-      
+
       s3Object.Body.pipe(res);
     }
-    
+
   } catch (err) {
     console.error("video proxy error:", err);
-    
+
     if (err?.$metadata?.httpStatusCode === 418 && err?.body?.iframe?.src) {
       const iframeSrc = err.body.iframe.src;
       res.status(418).send(`
@@ -631,7 +655,7 @@ app.get("/api/videos/:filename(*)", async (req, res) => {
       `);
       return;
     }
-    
+
     res.status(500).send("Failed to load video");
   }
 });

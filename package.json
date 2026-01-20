@@ -10,6 +10,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "dependencies": {
+    "mongoose": "^9.1.4",
     "nodemon": "^3.1.11"
   },
   "devDependencies": {
