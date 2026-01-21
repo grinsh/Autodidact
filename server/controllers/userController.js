@@ -25,4 +25,23 @@ const getUserById = async (req, res) => {
     }
 }
 
-module.exports = { getAllUsers, getUserById };
+const addUser = async (req, res) => {
+    const { id, name, email, courses, marks, schoolCode } = req.body;
+    try {
+        const newUser = new UserModel({
+            id,
+            name,
+            email,
+            courses,
+            marks,
+            schoolCode,
+        });
+        await newUser.save();
+        res.json({ message: "משתמש נוסף בהצלחה ! ", user: newUser });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json("failed to push user");
+    }
+
+}
+module.exports = { getAllUsers, getUserById, addUser };
