@@ -10,8 +10,10 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken")
 const { googleAuth } = require("./auth/googleAuth")
 const { createAccessToken, createRefreshToken } = require("./auth/tokenUnits");
-const connectDB = require('./config/db')
-const UserModel = require('./models/UserModel');
+const connectDB = require('./data/dbConfig')
+console.log("connectDB", connectDB);
+
+const UserModel = require('./data/models/UserModel');
 const userRoutes = require('./routes/userRoutes');
 const { getUserById } = require("./controllers/userController");
 
