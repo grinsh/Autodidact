@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {getStatistic} from "../../api/apiService";
+import { Loader } from "lucide-react";
 
-export default CourseCard = ({ userId, course, onSelectCourse }) => {
+export const CourseCard = ({ userId, course, onSelectCourse }) => {
   const [stat, setStat] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {

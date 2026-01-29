@@ -1,4 +1,7 @@
-export default LogOutButtonWithFeedback = ({ onLogOut, user, course, chapter }) => {
+import { useState } from "react";
+import { FeedbackForm } from "../auth/FeedbackForm";
+
+export const LogOutButtonWithFeedback = ({ onLogOut, user, course, chapter }) => {
   const [showFeedback, setShowFeedback] = useState(false);
 
   return (

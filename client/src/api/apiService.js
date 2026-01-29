@@ -1,5 +1,16 @@
-let accessToken = null;
+
+
+
+
+const API_URL = process.env.REACT_APP_API_URL;
+
+// const API_URL = "https://autodidact.co.il";
+let accessToken = "";
+
+// משתנה ששומר למעשה מצביע לפונקציה setAccessToken של הסטייט שב - App 
 let updateTokenInApp = null;
+
+
 
 /* ======================
    Token helpers

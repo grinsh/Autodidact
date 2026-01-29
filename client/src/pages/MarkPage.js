@@ -1,4 +1,4 @@
-export default MarksPage = ({ user, course, onBack }) => {
+export const MarksPage = ({ user, course, onBack }) => {
   const courseMarks = user.marks.filter((m) => m.courseId === course.id);
 
   const getMarkForChapter = (chapterId) =>

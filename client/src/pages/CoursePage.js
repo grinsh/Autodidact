@@ -1,4 +1,6 @@
-export default CoursePage = ({
+import { useState } from "react";
+
+export const CoursePage = ({
   user,
   course,
   onSelectChapter,

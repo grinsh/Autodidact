@@ -17,25 +17,16 @@ import {
 } from "lucide-react";
 import "./App.css";
 import axios from "axios";
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashbordPage";
-import CoursePage from "./pages/CoursePage";
-import ChapterPage from "./pages/ChapterPage";
-import MarksPage from "./pages/MarkPage";
-import LogOutButtonWithFeedback from "./components/common/LogOutButtonWithFeedback";
-import MessagePageChapter from "./pages/MessagePageChapter";
-import NotRegisteredPage from "./pages/NotRegisteredPage";
+import {LoginPage} from "./pages/LoginPage";
+import {DashboardPage} from "./pages/DashbordPage";
+import {CoursePage} from "./pages/CoursePage";
+import {ChapterPage} from "./pages/ChapterPage";
+import {MarksPage} from "./pages/MarkPage";
+import {LogOutButtonWithFeedback} from "./components/common/LogOutButtonWithFeedback";
+import {MessagePageChapter} from "./pages/MessagePageChapter";
+import {NotRegisteredPage} from "./pages/NotRegisteredPage";
 import {checkAssignment, checkIfSubmitted, fetchWithAuth, getCourses, getSchools, getStatistic, getUsers, login, logout, refreshToken, saveMark, setToken, setTokenAdapter, submitAssignment} from "./api/apiService";
 
-// 📦 API Service
-const API_URL = process.env.REACT_APP_API_URL;
-const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
-
-// const API_URL = "https://autodidact.co.il";
-let accessToken = "";
-
-// משתנה ששומר למעשה מצביע לפונקציה setAccessToken של הסטייט שב - App 
-let updateTokenInApp = null;
 
 
 
@@ -128,7 +119,7 @@ export default function App() {
   }, [accessToken]);
 
   useEffect(() => {
-    setTokenUdapter(setAccessToken);
+    setTokenAdapter(setAccessToken);
   }, [])
 
   const handleLogin = (user, token) => {

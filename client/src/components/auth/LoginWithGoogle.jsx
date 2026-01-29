@@ -1,4 +1,4 @@
-export default LoginWithGoogle = () => {
+export const LoginWithGoogle = () => {
   const loginWithGoogle = async () => {
     try {
       const res = await axios.get("http://localhost:5000/auth/google/url");

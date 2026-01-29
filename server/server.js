@@ -446,7 +446,7 @@ ${code}
 החזר ONLY JSON, ללא markdown.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });

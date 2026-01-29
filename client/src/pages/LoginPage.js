@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getSchools,login}  from "../api/apiService";
+import { LoginWithGoogle } from "../components/auth/LoginWithGoogle";
 
-export default LoginPage = ({ onLogin, loading }) => {
+export const LoginPage = ({ onLogin, loading }) => {
   const [schools, setSchools] = useState([]);
   const [schoolCode, setSchoolCode] = useState("");
   const [schoolName, setSchoolName] = useState("");

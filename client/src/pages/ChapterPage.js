@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import {checkIfSubmitted, checkAssignment, saveMark, submitAssignment} from "../api/apiService";
+import { AlertCircle, CheckCircle, Code, Loader, Play } from "lucide-react";
+import { VideoPlayer } from "../components/common/VideoPlayer";
 
-export default ChapterPage = ({ user, chapter, course, onBack }) => {
+export const ChapterPage = ({ user, chapter, course, onBack }) => {
+
+
+
   const [code, setCode] = useState("");
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading] = useState(false);

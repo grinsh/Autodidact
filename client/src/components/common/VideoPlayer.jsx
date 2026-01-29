@@ -1,4 +1,9 @@
-export default VideoPlayer = ({ filename, width = 640, height = 360 }) => {
+import { useEffect, useRef, useState } from "react";
+
+export const VideoPlayer = ({ filename, width = 640, height = 360 }) => {
+
+      const REACT_APP_VIDEOS_URL = process.env.REACT_APP_VIDEOS_URL;
+
     const videoRef = useRef(null);
     const [blockedHtml, setBlockedHtml] = useState(null);
     const [fade, setFade] = useState(false);

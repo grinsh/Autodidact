@@ -1,7 +1,10 @@
-export default DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
+import { Loader } from "lucide-react";
+import { CourseCard } from "../components/courses/CourseCard";
+
+export const DashboardPage = ({ user, onSelectCourse, courses, loading }) => {
     const userCourses = courses.filter((c) => user?.courses?.includes(c.id));
-    if (!userCourses) {
-        console.log("there are no courses available for this student...")
+    if (!userCourses.length) {
+        console.log("there are no courses available for this student...");
     }
     return (
         <div className="min-h-screen bg-gray-50 p-8" dir="rtl">

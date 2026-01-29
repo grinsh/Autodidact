@@ -1,4 +1,4 @@
-export default MessagePageChapter = ({ onBack }) => {
+export const MessagePageChapter = ({ onBack }) => {
     return (
         <div
             className="min-h-screen bg-gray-50 flex items-center justify-center p-8"
@@ -12,7 +12,6 @@ export default MessagePageChapter = ({ onBack }) => {
                     הצוות שלנו עובד על זה — שווה לחזור לכאן בעוד כמה ימים 💜
                 </p>
 
-                {/* קונטיינר שמרכז את הכפתור */}
                 <div className="flex justify-center">
                     <button
                         onClick={onBack}

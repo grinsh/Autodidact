@@ -1,4 +1,7 @@
-export default FeedbackForm = ({ user, course, chapter, onClose }) => {
+import { Loader, Send } from "lucide-react";
+import { useState } from "react";
+
+export const FeedbackForm = ({ user, course, chapter, onClose }) => {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
