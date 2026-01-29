@@ -17,15 +17,7 @@ import {
 } from "lucide-react";
 import "./App.css";
 import axios from "axios";
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashbordPage";
-import CoursePage from "./pages/CoursePage";
-import ChapterPage from "./pages/ChapterPage";
-import MarksPage from "./pages/MarkPage";
-import LogOutButtonWithFeedback from "./components/common/LogOutButtonWithFeedback";
-import MessagePageChapter from "./pages/MessagePageChapter";
-import NotRegisteredPage from "./pages/NotRegisteredPage";
-import {checkAssignment, checkIfSubmitted, fetchWithAuth, getCourses, getSchools, getStatistic, getUsers, login, logout, refreshToken, saveMark, setToken, setTokenAdapter, submitAssignment} from "./api/apiService";
+
 
 // 📦 API Service
 const API_URL = process.env.REACT_APP_API_URL;
@@ -53,7 +45,7 @@ export default function App() {
 
   // redirect to the login page
   const handleLogOut = async () => {
-    const res = await logout()
+    const res = await apiService.logout()
     console.log('logout by jwt sucsessed ? ', res);
     setAccessToken(null)
     setCurrentPage("login");
@@ -83,7 +75,7 @@ export default function App() {
         }
 
         const data = await res.json();
-        setToken(data.accessToken);
+        apiService.setToken(data.accessToken);
         setAccessToken(data.accessToken);
 
         const userRes = await fetch(`${API_URL}/api/me`, {
@@ -117,7 +109,7 @@ export default function App() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const data = await getCourses();
+        const data = await apiService.getCourses();
         setCourses(data);
       } catch (err) {
         console.error("Error fetching courses:", err);
@@ -128,11 +120,11 @@ export default function App() {
   }, [accessToken]);
 
   useEffect(() => {
-    setTokenUdapter(setAccessToken);
+    apiService.setTokenUdapter(setAccessToken);
   }, [])
 
   const handleLogin = (user, token) => {
-    setToken(token);
+    apiService.setToken(token);
     setCurrentUser(user);
     setCurrentPage("dashboard");
   };

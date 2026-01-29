@@ -18,6 +18,7 @@ const userRoutes = require('./routes/userRoutes');
 const { getUserById } = require("./controllers/userController");
 
 require("dotenv").config();
+console.log(process.env.MONGO_URI);
 connectDB();
 
 const app = express();
